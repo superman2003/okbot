@@ -6,10 +6,9 @@ AnyModelBot을 더 나은 앱으로 만드는 데 함께해 주셔서 감사합�
 
 ## 질문 및 의견
 
-- **질문, 아이디어, 사용 사례:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
-- **버그 및 기능 요청:** 템플릿을 사용해 [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues)에 제출
+- **질문, 아이디어, 사용 사례:** [GitHub Discussions](https://github.com/superman2003/okbot/discussions)
+- **버그 및 기능 요청:** 템플릿을 사용해 [GitHub Issues](https://github.com/superman2003/okbot/issues)에 제출
 - **보안 문제:** 공개 이슈를 열지 말고 [보안 정책](./SECURITY_ko.md)에 따라 비공개 신고
-- **그 밖의 문의:** [support@anymodel.bot](mailto:support@anymodel.bot)
 
 버그를 신고할 때 다음 정보를 포함해 주세요.
 
@@ -23,8 +22,8 @@ AnyModelBot을 더 나은 앱으로 만드는 데 함께해 주셔서 감사합�
 Node.js 22.13 이상과 내장 magpie 게이트웨이 컴파일을 위한 Go 1.26.8 이상이 필요합니다.
 
 ```bash
-git clone https://github.com/modelflare-ai/AnyModelBot.git
-cd AnyModelBot
+git clone https://github.com/superman2003/okbot.git
+cd okbot
 npm install
 npm run setup          # vendor/magpie 서브모듈을 가져와 build/bin/에 컴파일
 ```
@@ -71,7 +70,7 @@ npm run setup          # vendor/magpie 서브모듈을 가져와 build/bin/에 �
 
 ## 행동 강령
 
-친절하게, 사실에 근거해 소통하세요. 모든 참여자를 존중하고 사람 대신 아이디어를 비판하세요. 괴롭힘, 인신공격, 차별적 표현은 허용하지 않습니다. 관리자는 이 기준에 맞지 않는 내용을 삭제할 수 있습니다. 우려 사항은 [support@anymodel.bot](mailto:support@anymodel.bot)으로 알려 주세요.
+모든 참여자를 존중하고 사람 대신 아이디어를 논의하세요. 괴롭힘, 인신공격, 차별은 허용하지 않으며 관리자는 부적절한 내용을 삭제할 수 있습니다.
 
 ## 라이선스
 

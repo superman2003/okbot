@@ -6,10 +6,9 @@ AnyModelBot の改善にご協力いただきありがとうございます。�
 
 ## 質問とフィードバック
 
-- **質問、アイデア、活用事例：** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
-- **不具合と機能要望：** テンプレートを使って [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues) へ
+- **質問、アイデア、活用事例：** [GitHub Discussions](https://github.com/superman2003/okbot/discussions)
+- **不具合と機能要望：** テンプレートを使って [GitHub Issues](https://github.com/superman2003/okbot/issues) へ
 - **セキュリティの問題：** 公開 Issue は作成せず、[セキュリティポリシー](./SECURITY_ja.md) に従って非公開で報告してください
-- **その他：** [support@anymodel.bot](mailto:support@anymodel.bot)
 
 不具合の報告には、次の情報を添えてください。
 
@@ -23,8 +22,8 @@ AnyModelBot の改善にご協力いただきありがとうございます。�
 Node.js 22.13 以降と、同梱の magpie ゲートウェイをコンパイルするための Go 1.26.8 以降が必要です。
 
 ```bash
-git clone https://github.com/modelflare-ai/AnyModelBot.git
-cd AnyModelBot
+git clone https://github.com/superman2003/okbot.git
+cd okbot
 npm install
 npm run setup          # vendor/magpie サブモジュールを取得し build/bin/ にコンパイル
 ```
@@ -71,7 +70,7 @@ npm run setup          # vendor/magpie サブモジュールを取得し build/b
 
 ## 行動規範
 
-親切に、事実に基づいてやり取りしてください。参加者を尊重し、人ではなくアイデアについて議論してください。嫌がらせ、個人攻撃、差別的な発言は認めません。管理者はこの方針に反する内容を削除することがあります。懸念があれば [support@anymodel.bot](mailto:support@anymodel.bot) へお知らせください。
+参加者を尊重し、人ではなくアイデアについて話し合ってください。嫌がらせ、個人攻撃、差別は認めません。管理者は不適切な内容を削除する場合があります。
 
 ## ライセンス
 

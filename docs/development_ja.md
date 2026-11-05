@@ -1,8 +1,10 @@
 # 開発ガイド
 
+> この版では初回画面でカスタム API の URL・キー・モデルを設定します。以下の OKINTO アカウント経路は任意の接続として保持しています。インストーラーは[本リポジトリ](https://github.com/superman2003/okbot/releases)から取得してください。
+
 [简体中文](./development.md) | [English](./development_en.md) | 日本語 | [한국어](./development_ko.md) | [Русский](./development_ru.md)
 
-ソースからの実行、パッケージ作成、開発への参加を考えている方のためのガイドです。アプリを使うだけなら [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) からインストーラーを入手してください。[README](../README_ja.md#-ダウンロード) に手順があります。
+ソースからの実行、パッケージ作成、開発への参加を考えている方のためのガイドです。アプリを使うだけなら [Releases](https://github.com/superman2003/okbot/releases) からインストーラーを入手してください。[README](../README_ja.md#-ダウンロード) に手順があります。
 
 - ボットは役割、既定のモデル、記憶から構成されます。アカウントは設定 › 接続で全体管理し、全ボットで共有します。サービスごとにいくつでも追加できます。一人での個人利用を想定しています。
 - モデルは Modelflare アカウントまたは自分の公式 API キーで利用します。[Modelflare](https://modelflare.dev/?utm_source=anymodelbot&utm_campaign=amb_readme) が提供します。初回起動でログインまたは登録するとモデル一覧が自動表示されます。リクエストは同梱の [magpie](https://github.com/yetone/magpie) ゲートウェイを通ります。

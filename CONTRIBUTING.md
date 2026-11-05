@@ -6,10 +6,9 @@
 
 ## 提问与反馈
 
-- **提问、想法、使用交流：** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
-- **Bug 与功能建议：** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues)，按模板填写
+- **提问、想法、使用交流：** [GitHub Discussions](https://github.com/superman2003/okbot/discussions)
+- **Bug 与功能建议：** [GitHub Issues](https://github.com/superman2003/okbot/issues)，按模板填写
 - **安全问题：** 不要公开提 issue，按 [SECURITY.md](./SECURITY.md) 私下报告
-- **其他事情：** 发邮件到 [support@anymodel.bot](mailto:support@anymodel.bot)
 
 提 bug 时请带上：
 
@@ -23,8 +22,8 @@
 需要 Node.js 22.13+ 和 Go 1.26.8+（编译内置网关 magpie）。
 
 ```bash
-git clone https://github.com/modelflare-ai/AnyModelBot.git
-cd AnyModelBot
+git clone https://github.com/superman2003/okbot.git
+cd okbot
 npm install
 npm run setup          # 拉取 vendor/magpie 子模块并编译到 build/bin/
 ```
@@ -71,7 +70,7 @@ npm run setup          # 拉取 vendor/magpie 子模块并编译到 build/bin/
 
 ## 行为准则
 
-友善、就事论事。尊重每一位参与者，对事不对人；不接受骚扰、人身攻击或歧视性言论。维护者可以删除不符合这些要求的内容。遇到问题可以发邮件到 [support@anymodel.bot](mailto:support@anymodel.bot)。
+友善、就事论事。尊重每一位参与者，对事不对人；不接受骚扰、人身攻击或歧视性言论。维护者可以删除不符合这些要求的内容。
 
 ## 许可
 

@@ -1,8 +1,10 @@
 # Development guide
 
+> This edition defaults to a custom OpenAI-compatible upstream configured by URL, key and model in the UI. The OKINTO account and group flows below remain optional integrations. Download installers from [this repository](https://github.com/superman2003/okbot/releases).
+
 [简体中文](./development.md) | English | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md)
 
-This guide is for people who want to run AnyModelBot from source, package it, or contribute. If you only want to use the app, download an installer from [Releases](https://github.com/modelflare-ai/AnyModelBot/releases); see the [README](../README_en.md#-download).
+This guide is for people who want to run AnyModelBot from source, package it, or contribute. If you only want to use the app, download an installer from [Releases](https://github.com/superman2003/okbot/releases); see the [README](../README_en.md#-download).
 
 - A bot is a persona, a default model and its memory. Accounts are global (Settings › Connections) and shared by all bots, with as many per service as you like. Built for personal use by one person.
 - Models come from a Modelflare account or your own official API keys. [Modelflare](https://modelflare.dev/?utm_source=anymodelbot&utm_campaign=amb_readme): on first launch you sign in to (or sign up for) a Modelflare account and the models are listed automatically. Requests go through the bundled [magpie](https://github.com/yetone/magpie) gateway.

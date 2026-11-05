@@ -6,10 +6,9 @@ Thanks for helping make AnyModelBot better. Bug reports, fixes, docs and ideas a
 
 ## Questions and feedback
 
-- **Questions, ideas, show and tell:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions)
-- **Bugs and feature requests:** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues), using the templates
+- **Questions, ideas, show and tell:** [GitHub Discussions](https://github.com/superman2003/okbot/discussions)
+- **Bugs and feature requests:** [GitHub Issues](https://github.com/superman2003/okbot/issues), using the templates
 - **Security problems:** do not open a public issue; report privately as described in [SECURITY.md](./SECURITY.md)
-- **Anything else:** email [support@anymodel.bot](mailto:support@anymodel.bot)
 
 When reporting a bug, please include:
 
@@ -23,8 +22,8 @@ When reporting a bug, please include:
 Requires Node.js 22.13+ and Go 1.26.8+ (to compile the bundled magpie gateway).
 
 ```bash
-git clone https://github.com/modelflare-ai/AnyModelBot.git
-cd AnyModelBot
+git clone https://github.com/superman2003/okbot.git
+cd okbot
 npm install
 npm run setup          # fetch the vendor/magpie submodule and compile it into build/bin/
 ```
@@ -71,7 +70,7 @@ Repository layout, packaging and channel setup are covered in the [development g
 
 ## Code of conduct
 
-Be kind and stick to the facts. Respect every participant and critique ideas, not people; harassment, personal attacks and discriminatory language are not accepted. Maintainers may remove content that does not meet these expectations. To raise a concern, email [support@anymodel.bot](mailto:support@anymodel.bot).
+Be kind and stick to the facts. Respect every participant and discuss ideas rather than people. Harassment, personal attacks and discrimination are not accepted; maintainers may remove inappropriate content.
 
 ## License
 

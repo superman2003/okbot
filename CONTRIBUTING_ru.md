@@ -6,10 +6,9 @@
 
 ## Вопросы и обратная связь
 
-- **Вопросы, идеи, ваши примеры:** [GitHub Discussions](https://github.com/modelflare-ai/AnyModelBot/discussions).
-- **Ошибки и пожелания:** [GitHub Issues](https://github.com/modelflare-ai/AnyModelBot/issues), используйте шаблоны.
+- **Вопросы, идеи, ваши примеры:** [GitHub Discussions](https://github.com/superman2003/okbot/discussions).
+- **Ошибки и пожелания:** [GitHub Issues](https://github.com/superman2003/okbot/issues), используйте шаблоны.
 - **Проблемы безопасности:** не создавайте публичный issue; сообщите приватно по [правилам безопасности](./SECURITY_ru.md).
-- **Остальное:** [support@anymodel.bot](mailto:support@anymodel.bot).
 
 В сообщении об ошибке укажите:
 
@@ -23,8 +22,8 @@
 Требуются Node.js 22.13+ и Go 1.26.8+ для сборки встроенного шлюза magpie.
 
 ```bash
-git clone https://github.com/modelflare-ai/AnyModelBot.git
-cd AnyModelBot
+git clone https://github.com/superman2003/okbot.git
+cd okbot
 npm install
 npm run setup          # получить подмодуль vendor/magpie и собрать его в build/bin/
 ```
@@ -71,7 +70,7 @@ npm run setup          # получить подмодуль vendor/magpie и с
 
 ## Правила общения
 
-Будьте доброжелательны и опирайтесь на факты. Уважайте каждого участника, обсуждайте идеи, а не людей. Травля, личные нападки и дискриминационные высказывания недопустимы. Сопровождающие могут удалять неподходящий контент. О проблеме можно написать на [support@anymodel.bot](mailto:support@anymodel.bot).
+Уважайте участников и обсуждайте идеи, а не людей. Травля, личные нападки и дискриминация недопустимы; сопровождающие могут удалять неподходящий контент.
 
 ## Лицензия
 

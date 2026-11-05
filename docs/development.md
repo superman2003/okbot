@@ -1,8 +1,10 @@
 # 开发文档
 
+> 本分支默认使用自定义 OpenAI 兼容上游：在界面填写 URL、Key 并获取或手填模型。下文 OKINTO 账户与分组流程是保留的可选接入路径。Windows 安装包从[本仓库 Releases](https://github.com/superman2003/okbot/releases)下载。
+
 简体中文 | [English](./development_en.md) | [日本語](./development_ja.md) | [한국어](./development_ko.md) | [Русский](./development_ru.md)
 
-这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载)。
+这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/superman2003/okbot/releases) 下载安装包即可，见 [README](../README.md#-下载)。
 
 - 一个机器人 = 人设 + 默认模型 + 记忆。账号是全局的（设置 › 连接），所有机器人共用，同一个服务可以加多个。定位：自用、单用户。
 - 默认网关是 **OKINTO New API**。桌面版在隔离的 Electron session 分区登录 OKINTO；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 AnyModelBot 数据库。
