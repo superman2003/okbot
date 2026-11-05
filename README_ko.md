@@ -4,11 +4,11 @@
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows 다운로드](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1) · [문제 보고](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
+[Windows 다운로드](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) · [문제 보고](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
 
 ## 📥 다운로드
 
-현재 릴리스는 **Windows x64 설치 파일** [okbot-0.1.25-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.25-1/okbot-0.1.25-win-x64.exe)(약 160 MB)을 제공합니다. [릴리스 페이지](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1)에 `SHA256SUMS`도 있습니다.
+현재 릴리스는 **Windows x64 설치 파일** [okbot-0.1.26-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.26-1/okbot-0.1.26-win-x64.exe)(약 160 MB)을 제공합니다. [릴리스 페이지](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1)에 `SHA256SUMS`도 있습니다.
 
 Electron, magpie, DeepSeek Harness, Cua Driver를 포함합니다. Node.js나 Go를 따로 설치할 필요가 없습니다. 이 빌드는 서명되지 않았습니다. 창을 닫으면 트레이로 이동하며 트레이 메뉴에서 종료할 수 있습니다. 다른 OS는 소스 빌드를 참고하세요.
 

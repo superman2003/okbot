@@ -1,7 +1,9 @@
 // 对话页（参考 Grok Bot 的顶栏、Codex 的对话与输入框）：顶栏左侧头像 + 名称，右侧新对话 / 信息面板；
 // 760 阅读列，用户消息是浅灰气泡，机器人回复是整列正文，上方一行"思考中 / 正在回复 / 用时"；底部两行输入框。
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { html, Icon, IconButton, CopyButton, Menu, Popover, Badge, Notice, Skeleton, Spinner, autoGrow } from "../components/ui.js";
+import { html, Icon, IconButton, CopyButton, Menu, MenuButton, Popover, Badge, Notice, Skeleton, Spinner, autoGrow } from "../components/ui.js";
+import { ChannelChat } from "./channel-chat.js";
+import { chatConversations, initialConversation } from "../lib/conversations.js";
 import { BotAvatar } from "../components/avatar.js";
 import { Markdown, Linkified } from "../components/markdown.js";
 import { ModelPicker, prefetchModelInfo, shortModel, sameModel } from "../components/model-picker.js";
@@ -210,7 +212,61 @@ export function ErrorNotice({ text, onRetry, onFixKey, source = "" }) {
     ${onRetry && html`<button type="button" class="btn" onClick=${onRetry}>${t("common.retry")}</button>`}`}>${auth ? (source ? t("chat.error.officialKeyInvalid", { name: source }) : t("chat.error.authInvalid")) : text}<//>`;
 }
 
-export function ChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount }) {
+export function ChatScreen(props) {
+  const { bot, conversationRequest } = props;
+  const [conversations, setConversations] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [error, setError] = useState("");
+  const chosen = useRef(false);
+  const storageKey = `amb-conversation:${bot.id}`;
+  const choose = (id) => {
+    chosen.current = true;
+    setSelected(id);
+    try { localStorage.setItem(storageKey, id); } catch { /* storage may be disabled */ }
+  };
+  useEffect(() => {
+    let alive = true, running = false;
+    const refresh = async () => {
+      if (running) return;
+      running = true;
+      try {
+        const r = await api(`/conversations?bot=${encodeURIComponent(bot.id)}`);
+        if (!alive) return;
+        const channels = chatConversations(r.conversations || []);
+        setConversations(channels);
+        setError("");
+        setSelected((old) => {
+          if (chosen.current) return old;
+          let saved = "";
+          try { saved = localStorage.getItem(storageKey) || ""; } catch { /* no stored choice */ }
+          chosen.current = true;
+          return initialConversation(r.conversations || [], saved);
+        });
+      } catch (e) {
+        if (alive) { setError(e.message); setSelected((old) => old || "console"); }
+      } finally { running = false; }
+    };
+    refresh();
+    const timer = setInterval(() => document.visibilityState === "visible" && refresh(), 3000);
+    window.addEventListener("focus", refresh);
+    return () => { alive = false; clearInterval(timer); window.removeEventListener("focus", refresh); };
+  }, [bot.id]);
+  useEffect(() => {
+    if (conversationRequest?.botId === bot.id) choose(conversationRequest.id);
+  }, [conversationRequest]);
+  const nameOf = (c) => `${t(`info.channel.${c.channel}`)} · ${c.title || c.peerId}`;
+  const picker = html`<div class="conversation-picker">
+    <${MenuButton} label=${t("chat.sync.choose")} value=${selected || "console"} align="left" width=${360}
+      options=${[["console", t("chat.sync.local")], ...conversations.map((c) => [c.id, nameOf(c)])]} onChange=${choose} />
+    ${error && html`<span class="hint" title=${error}>${t("chat.sync.listError")}</span>`}
+  </div>`;
+  if (!selected) return html`<section class="chat" data-screen="chat"><div class="chat-col"><${Spinner} /></div></section>`;
+  if (selected !== "console") return html`<${ChannelChat} key=${selected} bot=${bot} conversationId=${selected} picker=${picker}
+    infoOpen=${props.infoOpen} onToggleInfo=${props.onToggleInfo} onLocal=${() => choose("console")} />`;
+  return html`<${LocalChatScreen} ...${props} sourcePicker=${picker} />`;
+}
+
+function LocalChatScreen({ bot, models, modelsError, reloadModels, defaultModel, infoOpen, onToggleInfo, onWorking, onOpenSettings, onOpenBotSettings, onBotUpdated, pending = 0, serverBusy = false, account, onAccount, sourcePicker }) {
   const [items, setItems] = useState(null);
   const [convModel, setConvModel] = useState("");
   const [text, setText] = useState("");
@@ -726,6 +782,7 @@ export function ChatScreen({ bot, models, modelsError, reloadModels, defaultMode
         <${BotAvatar} bot=${bot} size=${22} state=${face} cue=${cue} />
         <span class="name">${bot.name}</span>
       </button>
+      ${sourcePicker}
       <span class="grow"></span>
       <${IconButton} icon="compose" iconSize="md" label=${t("chat.newConvCmd")} disabled=${generating} onClick=${() => send("/new")} />
       <${IconButton} icon="panel" iconSize="md" label=${t("chat.infoPanel")} on=${infoOpen} aria-pressed=${infoOpen} onClick=${onToggleInfo} />

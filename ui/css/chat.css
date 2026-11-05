@@ -61,6 +61,13 @@ button.head-bot:active { background: var(--pill-press); }
 /* 历史读到之后整列淡入一次（不是一行行弹出来）；之后的新消息各自有入场 */
 .chat-col.ready { animation: fade-in var(--dur-base) var(--ease-out); }
 
+.conversation-picker { min-width: 0; max-width: min(340px, 45vw); display: flex; align-items: center; gap: var(--space-2); -webkit-app-region: no-drag; }
+.conversation-picker .pick { min-width: 0; max-width: 100%; }
+.conversation-picker .v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.channel-sync-note { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3); background: var(--surface-solid); border-radius: var(--r-pane); box-shadow: var(--shadow-pane); color: var(--muted); font-size: var(--fs-sm); }
+.channel-sync-note .btn { flex-shrink: 0; }
+.history-older { align-self: center; }
+
 .msg-row { position: relative; display: flex; flex-direction: column; margin-top: var(--space-4); }
 .msg-row.cont { margin-top: var(--space-1); }
 .msg-row.user { align-items: flex-end; }

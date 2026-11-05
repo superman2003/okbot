@@ -84,7 +84,7 @@ function LiveTurn({ turn, convId }) {
 
 function ConversationSheet({ conv, onClose }) {
   const enc = encodeURIComponent(conv.id);
-  const [d, , reload] = usePoll(() => api(`/conversations/${enc}/messages`), 0, [conv.id]);
+  const [d, , reload] = usePoll(() => api(`/conversations/${enc}/messages`), 2000, [conv.id]);
   const [tr] = usePoll(() => api(`/conversations/${enc}/turn`), 2000, [conv.id]);
   const turn = tr?.turn;
   // 那一轮结束了：重新取消息，新回复和它的处理过程出现在列表里
@@ -115,7 +115,7 @@ export function InfoPanel({ bot, leaving, onClose, onOpenBotSettings, onOpenChat
   const [convs] = usePoll(() => api(`/conversations?bot=${encodeURIComponent(bot.id)}`), 8000, [bot.id]);
   const [viewing, setViewing] = useState(null);
   // 任务来自的会话：网页的就是这里的对话，微信、飞书的在会话记录里看
-  const openConv = (task) => (task.channel === "web" ? onOpenChat() : setViewing((convs?.conversations || []).find((c) => c.id === task.conversationId) || null));
+  const openConv = (task) => onOpenChat((convs?.conversations || []).find((c) => c.id === task.conversationId));
   const pending = (appr && appr.approvals) || [];
   // 上手清单：加了任何一个聊天渠道账号，就算接好了渠道
   const mine = (channels?.accounts || []).filter((a) => a.defaultBot === bot.id);
@@ -160,7 +160,7 @@ export function InfoPanel({ bot, leaving, onClose, onOpenBotSettings, onOpenChat
         ${!convs && html`<div class="row"><${Skeleton} w="60%" /></div>`}
         ${convs && !convs.conversations.length && html`<div class="row"><span class="hint">${t("info.noConvs")}</span></div>`}
         ${convs && convs.conversations.slice(0, 12).map((c) => html`<div class="row compact clickable" role="button" tabindex="0"
-            onClick=${() => (c.channel === "web" ? onOpenChat() : setViewing(c))} onKeyDown=${(e) => e.key === "Enter" && (c.channel === "web" ? onOpenChat() : setViewing(c))}>
+            onClick=${() => onOpenChat(c)} onKeyDown=${(e) => e.key === "Enter" && onOpenChat(c)}>
           <div class="who"><div class="name">${channelName(c.channel) || c.channel} · ${c.title || c.peerId}</div><div class="sub">${(c.lastMessage || "").replace(/^⚠️\s*/, "") || t("info.emptyMessage")}</div></div>
           <span class="hint num">${fmtAgo(c.updatedAt)}</span>
         </div>`)}

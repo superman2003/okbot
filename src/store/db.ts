@@ -953,6 +953,23 @@ export class Store {
       .all(conversationId, limit) as Row[];
     return rows.map((r) => this.toMessage(r));
   }
+
+  /** Cursor pages for channel history: newest page, older history, or new arrivals. */
+  messagePage(conversationId: string, limit: number, cursor: { before?: number; after?: number } = {}) {
+    const ascending = cursor.after !== undefined;
+    const predicate = cursor.before !== undefined ? " AND id < ?" : ascending ? " AND id > ?" : "";
+    const params: (string | number)[] = [conversationId];
+    if (predicate) params.push(cursor.before ?? cursor.after!);
+    params.push(limit + 1);
+    const rows = this.db.prepare(`SELECT *, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps
+      FROM messages WHERE conversation_id = ?${predicate} ORDER BY id ${ascending ? "ASC" : "DESC"} LIMIT ?`).all(...params) as Row[];
+    const hasMore = rows.length > limit;
+    const page = rows.slice(0, limit);
+    if (!ascending) page.reverse();
+    const messages = page.map((r) => this.toMessage(r));
+    const latest = this.db.prepare("SELECT MAX(id) AS id FROM messages WHERE conversation_id = ?").get(conversationId) as Row;
+    return { messages, hasMore, latestMessageId: Number(latest.id ?? 0) };
+  }
   private toMessage(r: Row): Message {
     const interim = strings(r.interim);
     const files = strings(r.files);

@@ -4,15 +4,17 @@
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[下载 Windows 安装包](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1) · [问题反馈](https://github.com/superman2003/okbot/issues) · [MIT 许可证](./LICENSE)
+[下载 Windows 安装包](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) · [问题反馈](https://github.com/superman2003/okbot/issues) · [MIT 许可证](./LICENSE)
 
 ## 📥 下载
 
-当前发布提供 **Windows x64 安装版**：[okbot-0.1.25-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.25-1/okbot-0.1.25-win-x64.exe)，约 160 MB。[发布页](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1)附带 `SHA256SUMS` 校验文件。
+当前发布提供 **Windows x64 安装版**：[okbot-0.1.26-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.26-1/okbot-0.1.26-win-x64.exe)，约 160 MB。[发布页](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1)附带 `SHA256SUMS` 校验文件。
 
 安装包已包含 Electron、magpie 模型网关、DeepSeek Harness 运行时和 Cua Driver，无需另装 Node.js 或 Go。本地构建未做数字签名。关闭窗口默认收到托盘，可通过托盘菜单退出。
 
 上游支持多个操作系统；本仓库本次发布仅提供上述 Windows x64 安装包，其他平台可参考源码构建流程。
+
+**微信记录同步：** 主聊天页顶部可切换应用内、微信和其他渠道会话，记录会自动刷新。更早的记录可分页加载。微信消息仍在微信发送；不同会话的上下文分别保留。
 
 ## 自定义模型服务
 

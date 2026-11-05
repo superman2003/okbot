@@ -1,5 +1,15 @@
 // chat · en
 export default {
+  sync: {
+    "choose": "Switch conversation",
+    "local": "In-app chat",
+    "channel": "Channel",
+    "transcript": "{channel} chat history",
+    "listError": "Could not load conversations",
+    "older": "Load earlier messages",
+    "readonly": "Automatically syncing {channel} history. Read here; send messages in {channel}.",
+    "openLocal": "Open in-app chat"
+},
   aria: "Conversation with {name}",
   infoPanel: "Info panel (⌘⇧I)",
   newConvCmd: "New conversation (/new)",

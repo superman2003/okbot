@@ -4,6 +4,14 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.26 - 2026-11-05
+
+### Added
+
+- Switch between in-app and channel conversations from the main chat; the sidebar opens the most recent conversation.
+- Channel history refreshes automatically, with older messages, activity, files and pending approvals available.
+- Each conversation keeps its own context. The desktop displays channel history; messages are sent in the original channel.
+
 ## 0.1.25 - 2026-11-05
 
 ### Fixed

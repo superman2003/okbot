@@ -4,11 +4,11 @@
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Загрузить для Windows](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1) · [Обратная связь](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
+[Загрузить для Windows](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) · [Обратная связь](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
 
 ## 📥 Скачать
 
-Текущий выпуск содержит **установщик Windows x64** [okbot-0.1.25-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.25-1/okbot-0.1.25-win-x64.exe), около 160 МБ. На [странице выпуска](https://github.com/superman2003/okbot/releases/tag/custom-0.1.25-1) доступен `SHA256SUMS`.
+Текущий выпуск содержит **установщик Windows x64** [okbot-0.1.26-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.26-1/okbot-0.1.26-win-x64.exe), около 160 МБ. На [странице выпуска](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) доступен `SHA256SUMS`.
 
 Включены Electron, шлюз magpie, DeepSeek Harness и Cua Driver. Отдельная установка Node.js или Go не требуется. Эта сборка не подписана цифровой подписью. Закрытие окна сворачивает приложение в трей; выход — через меню трея. Для других ОС используйте сборку из исходников.
 

@@ -267,25 +267,53 @@ async function boot(): Promise<void> {
 async function smoke(out: string): Promise<void> {
   try {
     const wc = win!.webContents;
+    const channelMode = process.env.AMB_ELECTRON_SMOKE_CHANNELS === "1";
     await new Promise<void>((r) => (wc.isLoading() ? wc.once("did-finish-load", () => r()) : r()));
     // 未连接 OKINTO 时是引导页，已连接时是对话页；两者都带 data-screen
     let screen = "";
     for (let i = 0; i < 50; i++) {
       screen = String(await wc.executeJavaScript("document.querySelector('[data-screen]')?.getAttribute('data-screen') || ''"));
-      const ready = await wc.executeJavaScript("!!document.querySelector('.upstream-form')");
+      const ready = await wc.executeJavaScript(channelMode ? "!!document.querySelector('[data-screen=channel-chat] .channel-sync-note')" : "!!document.querySelector('.upstream-form')");
       if (screen && screen !== "loading" && ready) break;
       await new Promise((r) => setTimeout(r, 200));
+    }
+    let channelHistory = false;
+    if (channelMode) {
+      const waitFor = async (expression: string) => {
+        for (let i = 0; i < 60; i++) {
+          if (await wc.executeJavaScript(expression)) return;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        throw new Error(`Channel history smoke check timed out: ${expression}`);
+      };
+      await waitFor("document.body.innerText.includes('smoke-wechat-seed') && !document.body.innerText.includes('smoke-local-only')");
+      await wc.executeJavaScript("document.querySelector('.history-older').click()");
+      await waitFor("document.body.innerText.includes('smoke-wechat-first')");
+      core!.store.addMessage("default:weixin:smoke-peer", "assistant", "smoke-wechat-synced");
+      // A hidden test window skips visibility-based polling. Trigger the same focus refresh as the app.
+      await wc.executeJavaScript("window.dispatchEvent(new Event('focus'))");
+      await waitFor("document.body.innerText.includes('smoke-wechat-synced')");
+      await wc.executeJavaScript("document.querySelector('.channel-sync-note button').click()");
+      await waitFor("document.querySelector('[data-screen=chat]') && document.body.innerText.includes('smoke-local-only') && !document.body.innerText.includes('smoke-wechat-seed')");
+      await wc.executeJavaScript("document.querySelector('.conversation-picker button').click()");
+      await waitFor("[...document.querySelectorAll('[role=menuitem]')].some(e=>e.innerText.includes('Smoke WeChat'))");
+      await wc.executeJavaScript("[...document.querySelectorAll('[role=menuitem]')].find(e=>e.innerText.includes('Smoke WeChat')).click()");
+      await waitFor("document.querySelector('[data-screen=channel-chat]') && document.body.innerText.includes('smoke-wechat-synced')");
+      channelHistory = true;
+      screen = "channel-chat";
     }
     // Let the compositor paint the newly mounted screen before the capture.
     await wc.executeJavaScript("document.fonts.ready.then(() => true)");
     await new Promise((r) => setTimeout(r, 500));
     const customUpstreamForm = await wc.executeJavaScript("!!document.querySelector('#upstream-url') && !!document.querySelector('#upstream-key') && !!document.querySelector('#upstream-model')");
+    win!.showInactive();
+    await new Promise((r) => setTimeout(r, 300));
     const img = await wc.capturePage();
     fs.writeFileSync(out, img.toPNG());
     const status = await wc.executeJavaScript("fetch('/amb/api/status').then(r=>r.status)");
     const magpie = await wc.executeJavaScript("fetch('/magpie/').then(r=>r.status)");
     const title = await wc.executeJavaScript("document.title");
-    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, customUpstreamForm, title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
+    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, customUpstreamForm, channelHistory, title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
   } finally {
     app.quit(); // 任何一步失败也退出，不让冒烟测试挂到超时
   }

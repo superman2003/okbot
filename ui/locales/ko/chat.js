@@ -1,4 +1,14 @@
 export default {
+  sync: {
+    "choose": "대화 전환",
+    "local": "앱 내 채팅",
+    "channel": "채널",
+    "transcript": "{channel} 대화 기록",
+    "listError": "대화 목록을 불러오지 못했습니다",
+    "older": "이전 메시지 불러오기",
+    "readonly": "{channel} 기록을 자동으로 동기화합니다. 여기서 읽고 메시지는 {channel}에서 보내세요.",
+    "openLocal": "앱 내 채팅 열기"
+},
   "aria": "{name}와의 대화",
   "infoPanel": "정보 패널(⌘⇧I)",
   "newConvCmd": "새 대화(/new)",

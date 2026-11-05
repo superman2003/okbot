@@ -135,6 +135,7 @@ function App() {
   // 订阅界面语言：切换语言时整棵树跟着重渲染（子组件里的 t() 都在渲染时取）
   const lang = useLang();
   const [route, setRoute] = useState(parseHash);
+  const [chatConversation, setChatConversation] = useState(null);
   const [mf, mfErr, reloadMf] = useLoader(() => api("/modelflare"));
   const [status, , reloadStatus] = useLoader(() => api("/status"));
   // 新版本提示：服务端在后台查 GitHub，这里只读结果（启动约 20 秒后才有第一次结果，所以隔一分钟看一次）
@@ -244,7 +245,7 @@ function App() {
         const latest = {};
         // 群里的话算在群聊那一行，不算在机器人这一行
         for (const c of d.conversations || []) if (!c.peerId?.startsWith("group:") && (!latest[c.botId] || c.updatedAt > latest[c.botId].updatedAt)) latest[c.botId] = c;
-        setPreviews(Object.fromEntries(Object.entries(latest).map(([k, c]) => [k, { text: (c.lastMessage || "").replace(/^⚠️\s*/, "").replace(/\s+/g, " "), at: c.updatedAt }])));
+        setPreviews(Object.fromEntries(Object.entries(latest).map(([k, c]) => [k, { text: (c.lastMessage || "").replace(/^⚠️\s*/, "").replace(/\s+/g, " "), at: c.updatedAt, conversationId: c.channel === "web" ? "console" : c.id }])));
       })
       .catch(() => {});
     reloadGroups();
@@ -298,6 +299,7 @@ function App() {
   const openChat = (id) => {
     if (id) setLastBot(id);
     const target = id || (bot && bot.id) || "";
+    if (previews[target]?.conversationId) setChatConversation({ botId: target, id: previews[target].conversationId, at: Date.now() });
     go(`/${isAppBot((bots || []).find((b) => b.id === target)) ? "app" : "chat"}/${encodeURIComponent(target)}`);
   };
   const openDiscover = () => go("/discover");
@@ -443,6 +445,7 @@ function App() {
     <${Splitter} class="split-side" size="--side-w" label=${t("app.resizeSide")} value=${sideW} room=${room("--panel-track")} onCommit=${(v) => setPrefs({ sideW: v })} />
     <main class="main">
       ${view === "chat" && bot && html`<${ChatScreen} key=${bot.id} bot=${bot} models=${models} modelsError=${modelsError} reloadModels=${reloadModels}
+        conversationRequest=${chatConversation}
         defaultModel=${settings && settings.defaultModel} infoOpen=${infoOpen} onToggleInfo=${() => setInfoOpen((v) => !v)}
         onWorking=${onWorking} pending=${pending[bot.id] || 0} serverBusy=${!!agentWorking[bot.id]} onOpenSettings=${openSettings} onOpenBotSettings=${openBotSettings} onBotUpdated=${onBotUpdated}
         account=${managed ? account : null} onAccount=${setAccount} />`}
@@ -468,7 +471,7 @@ function App() {
       onCommit=${(v) => setPrefs({ panelW: v })} />`}
     ${shownPanel && html`<div class=${`panel-scrim${panelFx.leaving ? " leaving" : ""}`} onClick=${() => setInfoOpen(false)}></div>`}
     ${shownPanel && html`<${InfoPanel} key=${shownPanel.id} bot=${shownPanel} leaving=${panelFx.leaving} onClose=${() => setInfoOpen(false)}
-      onOpenBotSettings=${() => openBotSettings(shownPanel.id)} onOpenChat=${() => setInfoOpen(false)} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
+      onOpenBotSettings=${() => openBotSettings(shownPanel.id)} onOpenChat=${(conversation) => { setChatConversation({ botId: shownPanel.id, id: conversation?.channel !== "web" && conversation?.id || "console", at: Date.now() }); setInfoOpen(false); }} onOpenConnections=${(row) => openSettings("connections", row || "")} />`}
     <${CoachMark} bot=${view === "chat" ? bot : null} view=${view} infoOpen=${!!panelBot} />
     ${palette && html`<${Palette} commands=${commands} onClose=${() => setPalette(false)} />`}
     ${groupSheet && bots && html`<${GroupSheet} group=${groupSheet.group} bots=${bots} onClose=${() => setGroupSheet(null)}

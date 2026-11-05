@@ -1188,7 +1188,27 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
       if (seg.length === 3 && seg[2] === "messages" && m === "GET") {
         const conv = app.store.getConversation(decodeURIComponent(seg[1]));
         if (!conv) throw new HttpError(404, t("web.conversationNotFound"));
-        return send(res, 200, { conversation: conv, messages: app.store.listMessages(conv.id).map(publicMessage), canOpen: !!app.desktop?.openPath });
+        const integer = (name: string, fallback?: number) => {
+          const raw = url.searchParams.get(name);
+          if (raw === null) return fallback;
+          const value = Number(raw);
+          if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < 0) throw new HttpError(400, `invalid ${name}`);
+          return value;
+        };
+        const limit = integer("limit", 500)!;
+        const before = integer("before"), after = integer("after");
+        if (limit < 1 || limit > 500 || (before !== undefined && after !== undefined)) throw new HttpError(400, "invalid history cursor");
+        const page = app.store.messagePage(conv.id, limit, { before, after });
+        const turn = app.agent.turnsInProgress.get(conv.id);
+        return send(res, 200, {
+          conversation: conv, messages: page.messages.map(publicMessage),
+          hasMore: page.hasMore, latestMessageId: page.latestMessageId,
+          cursorValid: !after || app.store.getMessage(after)?.conversationId === conv.id,
+          pending: app.store.listApprovals({ status: "pending", conversationId: conv.id, limit: 50 }).map((r) => publicApproval(r, app.store)),
+          turn: turn ? { since: turn.since, lastProgress: turn.lastProgress, steps: turn.activity.steps, interim: turn.interim } : null,
+          busy: app.runtime.busySince(conv.id) !== undefined,
+          canOpen: !!app.desktop?.openPath,
+        });
       }
       // 一条回复的代理活动记录（展开时才取）
       if (seg.length === 5 && seg[2] === "messages" && seg[4] === "activity" && m === "GET") {

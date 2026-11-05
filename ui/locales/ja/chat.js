@@ -1,4 +1,14 @@
 export default {
+  sync: {
+    "choose": "会話を切り替え",
+    "local": "アプリ内チャット",
+    "channel": "チャネル",
+    "transcript": "{channel} の会話履歴",
+    "listError": "会話一覧を取得できません",
+    "older": "以前のメッセージを読み込む",
+    "readonly": "{channel} の履歴を自動同期中です。ここでは閲覧できます。送信は {channel} で行ってください。",
+    "openLocal": "アプリ内でチャット"
+},
   "aria": "{name} との会話",
   "infoPanel": "情報パネル（⌘⇧I）",
   "newConvCmd": "新しい会話（/new）",

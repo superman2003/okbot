@@ -1,5 +1,15 @@
 // chat · zh-CN（screens/chat.js：对话页、输入框、审批 / 提问卡片）
 export default {
+  sync: {
+    "choose": "切换聊天会话",
+    "local": "应用内聊天",
+    "channel": "渠道",
+    "transcript": "{channel} 聊天记录",
+    "listError": "会话列表读取失败",
+    "older": "加载更早的记录",
+    "readonly": "正在自动同步{channel}记录。此处查看记录；发送消息请回到{channel}。",
+    "openLocal": "应用内聊天"
+},
   aria: "和 {name} 的对话",
   infoPanel: "信息面板（⌘⇧I）",
   newConvCmd: "开始新的一段对话（/new）",

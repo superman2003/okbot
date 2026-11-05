@@ -7,12 +7,13 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const exe = process.argv[2];
+const exe = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
+const channelMode = process.argv.includes("--channels");
 // Use a canonical path for Electron's isolated profile.
 const dataDir = fs.mkdtempSync(path.join(fs.realpathSync.native(os.tmpdir()), "amb-electron-"));
 const shot = path.join(dataDir, "smoke.png");
 let cmd = exe ? path.resolve(exe) : require("electron");
-let args = exe ? [] : ["."];
+let args = !exe || process.argv.includes("--dev") ? ["."] : [];
 if (process.platform === "linux") args.push("--no-sandbox");
 if (process.platform === "linux" && !process.env.DISPLAY) {
   // Xvfb 没有 GPU：不关 GPU 时 capturePage 会报 UnknownVizError
@@ -20,6 +21,21 @@ if (process.platform === "linux" && !process.env.DISPLAY) {
   cmd = "xvfb-run";
 }
 const childEnv = { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot, AMB_LOG_STDOUT: "1", AMB_CATALOG: "off", AMB_PWSH_AUTO_INSTALL: "0" };
+if (channelMode) {
+  const { Store } = await import("../dist/src/store/db.js");
+  const store = new Store(path.join(dataDir, "anymodel.db"));
+  store.createBot({ id: "default", name: "Smoke Bot", defaultModel: "mock" });
+  const local = store.ensureConversation("default", "web", "console");
+  store.addMessage(local.id, "user", "smoke-local-only");
+  const channel = store.ensureConversation("default", "weixin", "smoke-peer", "Smoke WeChat");
+  store.addMessage(channel.id, "user", "smoke-wechat-first");
+  for (let i = 0; i < 105; i++) store.addMessage(channel.id, "assistant", `smoke-history-${i}`);
+  store.addMessage(channel.id, "user", "smoke-wechat-seed");
+  store.close();
+  childEnv.AMB_ELECTRON_SMOKE_CHANNELS = "1";
+  childEnv.AMB_MAGPIE_BASE_URL = "http://127.0.0.1:9/v1";
+  childEnv.AMB_AGENT = "off";
+}
 delete childEnv.ELECTRON_RUN_AS_NODE;
 // Keep early startup diagnostics available even when no SMOKE line is emitted.
 const stdoutPath = path.join(dataDir, "stdout.log");
@@ -42,5 +58,5 @@ if (!line) {
 }
 const res = JSON.parse(line.slice(6));
 console.log(res, "截图：", shot);
-const ok = r.status === 0 && res.hasUi && res.customUpstreamForm && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
+const ok = r.status === 0 && res.hasUi && (channelMode ? res.channelHistory : res.customUpstreamForm && res.magpieState === "running") && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && fs.existsSync(shot);
 process.exit(ok ? 0 : 1);
