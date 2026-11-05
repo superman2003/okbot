@@ -4,6 +4,12 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.23 - 2026-11-05
+
+### Improvements
+
+- **A clearer product demo:** The homepage now includes a real 30-second product video, with localized versions for all five supported languages and the development docs.
+
 ## 0.1.22 - 2026-11-04
 
 ### New

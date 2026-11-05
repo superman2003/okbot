@@ -19,7 +19,8 @@ const files: string[] = [];
 (function walk(d: string) {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name);
-    if (e.isDirectory()) walk(p); else files.push(path.relative(pub, p));
+    if (e.isDirectory()) walk(p);
+    else files.push(path.relative(pub, p).split(path.sep).join("/"));
   }
 })(pub);
 

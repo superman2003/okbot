@@ -40,8 +40,9 @@ concurrency:
   cancel-in-progress: ${{ github.ref_type != 'tag' && inputs.tag == '' }}
 
 env:
-  # GHCR image names must be lowercase.
-  IMAGE: ghcr.io/modelflare-ai/anymodel-bot
+  # Keep the image in the namespace of the repository that triggered the workflow.
+  # GitHub repository owners are case-insensitive and are normalized in GHCR paths.
+  IMAGE: ghcr.io/${{ github.repository_owner }}/anymodel-bot
 
 jobs:
   meta:
