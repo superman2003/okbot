@@ -1,3 +1,4 @@
+import { displayModel, displayModelText } from "../lib/models.js";
 // 代理活动明细：回复上方那一行（"思考中 / 用时"）可以展开，默认折叠。展开后是这一轮的步骤——
 // 模型请求、工具调用、重试、子代理、压缩上下文——每步一行：状态点 + 名称 + 等宽摘要 + 用时；
 // 有参数或输出的步骤再点开看全文。对话页实时显示，信息面板里看微信 / 飞书会话的历史与正在处理的回合。
@@ -17,7 +18,7 @@ const kTokens = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k
 export function currentStep(steps) {
   const s = (steps || []).findLast((x) => x.status === "running");
   if (!s) return "";
-  if (s.kind === "model") return t("activity.waitingModel", { model: s.title });
+  if (s.kind === "model") return t("activity.waitingModel", { model: displayModel(s.title) });
   if (s.kind === "tool") return t("activity.runningTool", { tool: s.title });
   if (s.kind === "subagent") return t("activity.subagent");
   if (s.kind === "compact") return t("activity.compact");
@@ -50,20 +51,20 @@ function Step({ s, now }) {
   const ms = s.status === "running" ? now - s.at : s.ms;
   const head = html`<span class=${`dot ${DOT[s.status] || ""}`} aria-hidden="true"></span>
     <${Icon} name=${KIND_ICON[s.kind] || "info"} size=${14} class="k" />
-    <span class="t">${s.kind === "model" && (s.status === "running" || s.cut) ? t("activity.waitingModel", { model: s.title }) : s.title}</span>
-    ${s.summary && html`<span class="s">${s.summary}</span>`}
+    <span class="t">${s.kind === "model" && (s.status === "running" || s.cut) ? t("activity.waitingModel", { model: s.title }) : s.kind === "model" ? displayModel(s.title) : s.title}</span>
+    ${s.summary && html`<span class="s">${displayModelText(s.summary)}</span>`}
     <span class="grow"></span>
     ${ms != null && html`<span class=${`d num${s.status === "running" ? " shimmer" : ""}`}>${stepDur(ms)}</span>`}
     ${more && html`<${Icon} name="chevRight" size=${12} class="chev" />`}`;
-  const label = t("activity.stepLabel", { status: t(s.status === "error" ? "activity.failed" : s.status === "running" ? "activity.running" : "activity.done"), title: s.title });
+  const label = t("activity.stepLabel", { status: t(s.status === "error" ? "activity.failed" : s.status === "running" ? "activity.running" : "activity.done"), title: s.kind === "model" ? displayModel(s.title) : s.title });
   return html`<li class=${`act-step ${s.status}${open ? " open" : ""}`}>
     ${more
       ? html`<button type="button" class="act-head" aria-expanded=${open} aria-label=${t(open ? "activity.collapseDetail" : "activity.expandDetail", { label })} onClick=${() => setOpen(!open)}>${head}</button>`
       : html`<div class="act-head" aria-label=${label}>${head}</div>`}
     ${open && html`<div class="act-body">
       ${s.tokens && html`<div class="t-label num">${t("activity.tokens", { input: kTokens(s.tokens.input || 0), output: kTokens(s.tokens.output || 0) })}</div>`}
-      ${s.input && html`<div class="t-label">${t("activity.input")}</div><pre class="selectable">${s.input}</pre>`}
-      ${s.output && html`<div class="t-label">${t(s.kind === "model" ? "activity.reply" : "activity.output")}</div><pre class="selectable">${s.output}</pre>`}
+      ${s.input && html`<div class="t-label">${t("activity.input")}</div><pre class="selectable">${displayModelText(s.input)}</pre>`}
+      ${s.output && html`<div class="t-label">${t(s.kind === "model" ? "activity.reply" : "activity.output")}</div><pre class="selectable">${displayModelText(s.output)}</pre>`}
     </div>`}
   </li>`;
 }

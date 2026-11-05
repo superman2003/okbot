@@ -197,7 +197,7 @@ function publicAccess(e: AccessEntry) {
   };
 }
 
-/** 账户操作的错误：Modelflare 返回的状态码原样带给界面（没有状态码的网络错误按 502） */
+/** 账户操作的错误：OKINTO 返回的状态码原样带给界面（没有状态码的网络错误按 502） */
 async function accountCall<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
@@ -503,7 +503,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         return send(res, 200, { groups: app.account instanceof NewApiAccountManager ? await app.account.groupList(url.searchParams.get("refresh") === "1") : [] });
       }
       if (sub === "usage" && m === "GET") {
-        // Modelflare 一次最多给 30 天的用量
+        // OKINTO 一次最多给 30 天的用量
         const days = Math.min(30, Math.max(1, Math.floor(Number(url.searchParams.get("days") || 7)) || 7));
         return send(res, 200, await accountCall(() => app.account.usage(days)));
       }

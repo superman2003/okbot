@@ -120,7 +120,7 @@ async function loginInBrowser(app: App, rl: ReturnType<typeof lineReader>, remot
     const s = account.status();
     if (s.state === "signed_in") {
       const models = await app.runtime.listModels(true).catch(() => []);
-      console.log(tr("cli.signedInConnected", { name: s.name || "Modelflare", count: models.length }));
+      console.log(tr("cli.signedInConnected", { name: s.name || "OKINTO", count: models.length }));
       return;
     }
     if (s.state !== "signing_in") throw new Error(s.error || tr("cli.loginIncomplete"));

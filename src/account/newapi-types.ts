@@ -15,3 +15,12 @@ export function parsePlaygroundModel(id: string): { group: string; model: string
   if (!match) return undefined;
   try { return { group: decodeURIComponent(match[1]), model: match[2] }; } catch { return undefined; }
 }
+
+/** Display labels only. Routing IDs and persisted provider keys remain unchanged. */
+export function displayModel(id: string): string {
+  const plain = id.replace(/^(?:modelflare|mfb-[\w-]+)\//i, "");
+  const selected = parsePlaygroundModel(plain);
+  const decode = (text: string): string => { try { return decodeURIComponent(text); } catch { return text; } };
+  if (selected) return decode(selected.model) + " · " + selected.group;
+  return decode(plain);
+}

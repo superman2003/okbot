@@ -122,7 +122,7 @@ function Replay({ cls, label }) {
 // —— 组件样例里有状态的小件 ——
 function SegDemo() {
   const [v, setV] = useState("global");
-  return html`<${Seg} label="API 域名" value=${v} onChange=${setV} options=${[["global", "modelflare.dev"], ["cn", "origin.modelflare.dev"], ["cf", "cf.modelflare.dev"]]} />
+  return html`<${Seg} label="API 域名" value=${v} onChange=${setV} options=${[["global", "api.okinto.com"], ["cn", "api.okinto.com"], ["cf", "api.okinto.com"]]} />
     <${Seg} label="禁用" value="a" disabled onChange=${() => {}} options=${[["a", "开"], ["b", "关"]]} />`;
 }
 function SwitchDemo() {
@@ -348,9 +348,9 @@ const STATE_ROWS = [
     ["选中", () => html`<button type="button" class="tpl on" style="width: 190px"><span class="tpl-ic"><${Icon} name="chat" size="lg" /></span><span class="tpl-name">群聊日报</span><span class="tpl-desc">每天整理群消息</span></button>`]] },
   { name: "建议胶囊", note: ".chip", cells: basic((c) => html`<button type="button" class=${`chip ${c}`}>你能帮我做什么？</button>`) },
   { name: "问题选项", note: ".card .opt", cells: [
-    ...basic((c) => html`<div class="card gal-bare-card"><button type="button" class=${`opt ${c}`}><span class="letter">A</span><span>modelflare.dev<span class="desc">API 域名</span></span></button></div>`),
-    ["已选", () => html`<div class="card gal-bare-card"><button type="button" class="opt picked"><span class="letter">A</span><span>modelflare.dev<span class="desc">API 域名</span></span></button></div>`],
-    ["已结束", () => html`<div class="card done gal-bare-card"><button type="button" class="opt" disabled><span class="letter">B</span><span>origin.modelflare.dev<span class="desc">API 域名</span></span></button></div>`]] },
+    ...basic((c) => html`<div class="card gal-bare-card"><button type="button" class=${`opt ${c}`}><span class="letter">A</span><span>api.okinto.com<span class="desc">API 域名</span></span></button></div>`),
+    ["已选", () => html`<div class="card gal-bare-card"><button type="button" class="opt picked"><span class="letter">A</span><span>api.okinto.com<span class="desc">API 域名</span></span></button></div>`],
+    ["已结束", () => html`<div class="card done gal-bare-card"><button type="button" class="opt" disabled><span class="letter">B</span><span>api.okinto.com<span class="desc">API 域名</span></span></button></div>`]] },
   { name: "列表行", note: ".row.clickable · 键盘焦点描边往里收（卡片会裁掉外描边）", cells: basic((c) => html`<div class="list" style="width: 220px"><div class=${`row compact clickable ${c}`} tabindex="0"><div class="who"><div class="name">最近会话</div><div class="sub">3 分钟前</div></div></div></div>`) },
 ];
 
@@ -456,7 +456,7 @@ function WinCase({ name, note, w = 1240, ...app }) {
 
 // 回复里先是模型在回合中间说的话，最后的回复接在后面（chat.js 的 shownText）
 const INTERIM_REPLY = "我先看看下载目录里有什么。\n\n找到 12 张截图，按日期分进了 3 个文件夹，顺手挑了一张做封面。\n\n整理好了：截图都在「截图/2026-10」下面，清单和封面在下面。";
-const MD = "支持 **粗体**、`行内代码`、[链接](https://modelflare.dev)：\n\n- 列表项\n- 第二项\n\n```js\nconst ok = true;\n```";
+const MD = "支持 **粗体**、`行内代码`、[链接](https://api.okinto.com)：\n\n- 列表项\n- 第二项\n\n```js\nconst ok = true;\n```";
 
 function Gallery() {
   const mode = useStore(themeMode);
@@ -529,7 +529,7 @@ function Gallery() {
       <//>
 
       <${Section} id="type" title="文字" lead="9 级字号；新界面优先用文字角色类（.t-*），不再挑字号。">
-        ${prim && html`<${ScaleRows} tokens=${group(prim, "字号")} sample=${(t) => html`<span style=${{ fontSize: `var(${t.name})` }}>模型网关 Modelflare 0123</span>`} />`}
+        ${prim && html`<${ScaleRows} tokens=${group(prim, "字号")} sample=${(t) => html`<span style=${{ fontSize: `var(${t.name})` }}>模型网关 OKINTO 0123</span>`} />`}
         <h3 class="t-label">文字角色</h3>
         <${Demo} col code=${`<div class="t-heading">…</div>  <p class="t-meta">…</p>`}>
           ${() => html`${[["t-display", "引导页标题"], ["t-heading", "对话框 / 页面标题"], ["t-title", "列表标题"], ["t-prose", "对话正文：15px，行高 1.5"], ["t-body", "界面正文：13px"], ["t-control", "控件文字：12.5px"], ["t-meta", "次要说明：11.5px，muted"], ["t-label", "分组标题、菜单分组：11px semibold，不加字距"]].map(
@@ -643,7 +643,7 @@ const { mounted, leaving } = usePresence(open);   /* design/motion.js：退场�
             <div class="row"><div class="who"><div class="name">外观</div><div class="sub">跟随系统、浅色或深色</div></div><div class="ctl"><${SegDemo} /></div></div>
             <div class="row"><div class="who"><div class="name">长期记忆</div><div class="sub">开 / 关用 Switch</div></div><div class="ctl"><${Switch} label="长期记忆" value=${true} onChange=${() => {}} /></div></div>
             <div class="row"><div class="who"><div class="name">默认模型</div><div class="sub">新对话使用的模型</div></div><div class="ctl"><${MenuButtonDemo} /></div></div>
-            <div class="row"><div class="who"><div class="name">Modelflare</div><div class="sub">已连接 ••••x9Qa</div></div><div class="ctl"><${Badge} s="connected" /><button type="button" class="text">更换密钥</button></div></div>
+            <div class="row"><div class="who"><div class="name">OKINTO</div><div class="sub">已连接 ••••x9Qa</div></div><div class="ctl"><${Badge} s="connected" /><button type="button" class="text">更换密钥</button></div></div>
             <div class="row compact clickable"><div class="who"><div class="name">.row.compact.clickable</div><div class="sub">信息面板里的紧凑行</div></div><span class="hint num">3 分钟前</span></div>
             <div class="row-edit"><label>展开编辑区 .row-edit<input class="field" placeholder="App ID" /></label><div class="actions"><${Button} variant="primary">保存<//><${Button}>取消<//></div></div>
           </div>`}
@@ -686,8 +686,8 @@ const { mounted, leaving } = usePresence(open);   /* design/motion.js：退场�
             <div class="msg-row assistant"><div class="work-line live"><span class="shimmer">思考中 12 秒</span></div></div>
             <div class="msg-row assistant live"><div class="work-line live"><span class="shimmer">正在回复 4 秒</span></div><div class="msg"><${Markdown} text="好的，先按群把今天的消息分组，再挑出要你处理的" /></div></div>
             <div class="msg-row assistant"><div class="card"><div class="q-block"><div class="q">要用哪个 API 域名？</div>
-              <div class="opts"><button type="button" class="opt picked"><span class="letter">A</span><span>modelflare.dev<span class="desc">API 域名</span></span></button>
-              <button type="button" class="opt"><span class="letter">B</span><span>origin.modelflare.dev<span class="desc">API 域名</span></span></button></div></div></div></div>
+              <div class="opts"><button type="button" class="opt picked"><span class="letter">A</span><span>api.okinto.com<span class="desc">API 域名</span></span></button>
+              <button type="button" class="opt"><span class="letter">B</span><span>api.okinto.com<span class="desc">API 域名</span></span></button></div></div></div></div>
             <div class="msg-row assistant"><div class="card"><div class="meta"><span>「竞品周报」想问你</span></div><div class="q-block"><div class="q">报告用中文还是英文？</div><div class="q-detail">不回复就按中文做</div>
               <div class="opts"><button type="button" class="opt"><span class="letter">A</span><span>中文</span></button>
               <button type="button" class="opt"><span class="letter">B</span><span>英文</span></button></div></div></div></div>

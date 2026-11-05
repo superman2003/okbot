@@ -1,5 +1,5 @@
 // 设置页（参考 Codex）：侧栏换成设置导航（返回应用 + 查找 + 分页），主区是大标题 + 按用途分段的 list，一行一项；改动即保存。
-// 外观的主题是三张缩略图，Modelflare 顶部是账户和余额；搜索时它们退回普通的行（searchOnly）。
+// 外观的主题是三张缩略图，OKINTO 顶部是账户和余额；搜索时它们退回普通的行（searchOnly）。
 // 入口只有左下角账户按钮、⌘/Ctrl+, 和命令面板。
 // 外观（主题、字体、动画…）和对话习惯（发送键、通知）是本机界面偏好，存在浏览器里（lib/theme.js、lib/prefs.js）；
 // 其余设置走服务端 /settings。
@@ -224,7 +224,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   const [langPref, setLangPrefView] = useState(getLangPref);
   useEffect(() => onLangChange(() => setLangPrefView(getLangPref())), []);
 
-  // 图片 / 视频模型（共用 Key 能用的，按推荐顺序）：连上 Modelflare 后取
+  // 图片 / 视频模型（共用 Key 能用的，按推荐顺序）：连上 OKINTO 后取
   const [media, setMedia] = useState(null);
   const loadMedia = () =>
     api("/media/models")
@@ -295,7 +295,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
     api("/account/refresh", { method: "POST", body: {} })
       .then(onAccount)
       .catch(failed);
-  // 性价比（Key 的路由策略）：Modelflare 不支持时状态里 supported 变成 false，这一行随之消失
+  // 性价比（Key 的路由策略）：OKINTO 不支持时状态里 supported 变成 false，这一行随之消失
   const putKeyQuality = (strategy) =>
     api("/account/key-quality", { method: "PUT", body: { strategy } })
       .then((r) => {

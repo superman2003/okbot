@@ -21,7 +21,7 @@ export default {
     "botSettings": "「{name}」の設定",
     "botSettingsKeys": "ボット 設定 構成",
     "modelflare": "モデルの設定",
-    "modelflareKeys": "モデル modelflare 公式 キー api",
+    "modelflareKeys": "モデル okinto 公式 キー api",
     "appearance": "外観の設定",
     "appearanceKeys": "外観 フォント 文字 サイズ 動き アニメーション 透明 ぼかし 幅",
     "themeSystem": "テーマ：システムに合わせる",

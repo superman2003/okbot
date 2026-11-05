@@ -21,7 +21,7 @@ export default {
     botSettings: "「{name}」的设置",
     botSettingsKeys: "bot settings 机器人设置",
     modelflare: "OKINTO New API 设置",
-    modelflareKeys: "modelflare key 密钥 模型",
+    modelflareKeys: "okinto key 密钥 模型",
     appearance: "外观设置",
     appearanceKeys: "appearance 外观 字体 字号 动画 毛玻璃 宽度 font size motion",
     themeSystem: "主题：跟随系统",

@@ -33,6 +33,16 @@ function toolTurn(log: ActivityLog) {
 }
 
 describe("ActivityLog", () => {
+  it("uses decoded OKINTO labels for model steps and status without changing route IDs", () => {
+    const id = "modelflare/Okinto/%E5%9B%BD%E6%A8%A1/gpt-image-2.5";
+    const log = new ActivityLog(undefined, id);
+    log.apply("step/start", { turn: 1, step: 1 });
+    expect(log.last?.title).toBe("gpt-image-2.5 · 国模");
+    expect(describeStep({ ...log.last!, title: id })).toBe("等待 gpt-image-2.5 · 国模 回复");
+    log.apply("request/context", { model: id });
+    log.apply("assistant/message", { turn: 1, step: 1, message: { source: { model: id }, content: [] } });
+    expect(log.last?.title).toBe("gpt-image-2.5 · 国模");
+  });
   it("folds a tool turn into model / tool / model steps with timings, tokens, args and output", () => {
     const changes: ActivityStep[] = [];
     const log = new ActivityLog((s) => changes.push(s));

@@ -1,6 +1,6 @@
 /**
  * 生图 / 生视频：代理的 media_models / media_docs / generate_image / generate_video 工具经内部 bridge 调到这里，
- * 由宿主带着该机器人用的 Key 直连 Modelflare（代理子进程拿不到任何密钥），结果存进机器人工作区的 media/，
+ * 由宿主带着该机器人用的 Key 直连 OKINTO（代理子进程拿不到任何密钥），结果存进机器人工作区的 media/，
  * 再由代理用 present 交付到聊天。生成前要不要先问用户由 AgentManager 决定（manager.ts mediaAsk）：只在预计花费超过上限
  * 或机器人设成每次都问时问。
  * - 模型取自 GET /v1/models?scope=authorized&kind=image|video（这把 Key 真正能用的）；参数范围、是否必须带参考素材、
@@ -14,6 +14,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../log.js";
 import { t } from "../i18n/index.js";
+import { imagePayload, imageSources } from "./image-response.js";
+import { displayModel } from "../account/newapi-types.js";
 import { parsePlaygroundModel } from "../account/newapi-types.js";
 
 const log = logger("agent.media");
@@ -21,7 +23,7 @@ const log = logger("agent.media");
 export type MediaKind = "image" | "video";
 
 export interface MediaOptions {
-  /** Modelflare /v1 基址（随线路） */
+  /** OKINTO /v1 基址（随线路） */
   baseUrl: () => string;
   /** 该机器人用的 Key：它自己的预算 Key，没有就用共用 Key；未连接时为空 */
   keyFor: (botId: string) => string;
@@ -506,60 +508,39 @@ export class MediaService {
 
   private async image(botId: string, model: MediaModel, prompt: string, body: Record<string, unknown> | undefined, args: Record<string, unknown>): Promise<string> {
     const key = this.key(botId);
-    const files: string[] = [];
+    let res: Response;
     if (model.route === "gemini") {
       const req = body ? withoutModel(body) : { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } };
-      const res = await this.call(key, "POST", `/models/${encodeURIComponent(model.id)}:generateContent`, req, 300_000, this.o.geminiBaseUrl?.());
-      const out = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string }; inline_data?: { mime_type?: string; data?: string } }> } }> };
-      for (const c of out.candidates ?? [])
-        for (const p of c.content?.parts ?? []) {
-          const data = p.inlineData?.data ?? p.inline_data?.data;
-          if (data) files.push(this.save(botId, "image", Buffer.from(data, "base64"), p.inlineData?.mimeType ?? p.inline_data?.mime_type ?? "image/png"));
-        }
+      res = await this.call(key, "POST", "/models/" + encodeURIComponent(model.id) + ":generateContent", req, 300_000, this.o.geminiBaseUrl?.());
     } else if (model.route === "chat") {
       const req = { ...(body ?? { messages: [{ role: "user", content: prompt }] }), model: model.id, stream: false };
-      const res = await this.call(key, "POST", "/chat/completions", req);
-      const out = await res.json() as { choices?: Array<{ message?: { content?: unknown; images?: unknown } }> };
-      const urls = new Set<string>();
-      const collect = (value: unknown): void => {
-        if (typeof value === "string") {
-          for (const match of value.matchAll(/data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]+|!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/g)) urls.add(match[1] ?? match[0]);
-        } else if (Array.isArray(value)) value.forEach(collect);
-        else if (value && typeof value === "object") {
-          const part = value as { type?: string; image_url?: string | { url?: string }; url?: string; text?: string };
-          const image = typeof part.image_url === "string" ? part.image_url : part.image_url?.url;
-          if (image) urls.add(image);
-          if ((part.type === "image" || part.type === "image_url") && part.url) urls.add(part.url);
-          if (part.text) collect(part.text);
-        }
-      };
-      for (const choice of out.choices ?? []) { collect(choice.message?.content); collect(choice.message?.images); }
-      for (const url of urls) {
-        const inline = /^data:(image\/[\w.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(url);
-        if (inline) files.push(this.save(botId, "image", Buffer.from(inline[2], "base64"), inline[1]));
-        else {
-          const d = await this.download(url);
-          files.push(this.save(botId, "image", d.data, d.mime || "image/png"));
-        }
-      }
+      res = await this.call(key, "POST", "/chat/completions", req);
     } else {
       const size = typeof args.size === "string" && /^\d{2,5}x\d{2,5}$/.test(args.size) ? args.size : undefined;
       const req = body ? { ...body, model: model.id } : { model: model.id, prompt, ...(size ? { size } : {}) };
-      const res = await this.call(key, "POST", args.endpoint === "edits" ? "/images/edits" : "/images/generations", req);
-      const out = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
-      for (const item of out.data ?? []) {
-        if (item.b64_json) files.push(this.save(botId, "image", Buffer.from(item.b64_json, "base64"), "image/png"));
-        else if (item.url) {
-          const inline = /^data:(image\/[\w.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(item.url);
-          if (inline) { files.push(this.save(botId, "image", Buffer.from(inline[2], "base64"), inline[1])); continue; }
-          const d = await this.download(item.url);
-          files.push(this.save(botId, "image", d.data, d.mime || "image/png"));
+      res = await this.call(key, "POST", args.endpoint === "edits" ? "/images/edits" : "/images/generations", req);
+    }
+    let response: { data: Buffer; mime: string };
+    try { response = await this.readBody(res); }
+    catch { throw new MediaError("生图响应传输中断，图片未完整接收；未自动重试以避免重复扣费"); }
+    const files: string[] = [];
+    if (response.mime.startsWith("image/")) files.push(this.save(botId, "image", response.data, response.mime));
+    else {
+      let payload: unknown;
+      try { payload = imagePayload(response.data.toString("utf8")); }
+      catch (error) { throw new MediaError("无法解析生图响应：" + (error as Error).message); }
+      for (const url of imageSources(payload)) {
+        const inline = /^data:(image\/[\w.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(url);
+        if (inline) files.push(this.save(botId, "image", Buffer.from(inline[2], "base64"), inline[1]));
+        else {
+          const result = await this.download(url);
+          files.push(this.save(botId, "image", result.data, result.mime || "image/png"));
         }
       }
     }
-    if (!files.length) throw new MediaError(`${model.id} 没有返回图片`);
+    if (!files.length) throw new MediaError(displayModel(model.id) + " 没有返回图片");
     log.info("image generated", { bot: botId, model: model.id, files: files.length });
-    return `已用 ${model.id} 生成 ${files.length} 张图片，保存在工作区：${files.join("、")}。要发给用户，请用 present 工具交付这些文件。`;
+    return "已用 " + displayModel(model.id) + " 生成 " + files.length + " 张图片，保存在工作区：" + files.join("、") + "。要发给用户，请用 present 工具交付这些文件。";
   }
 
   private async video(botId: string, model: MediaModel, prompt: string, body: Record<string, unknown> | undefined, args: Record<string, unknown>): Promise<string> {
@@ -571,7 +552,7 @@ export class MediaService {
       : { model: model.id, prompt, ...(Number.isFinite(seconds) && seconds > 0 ? { seconds: String(Math.round(seconds)) } : {}), ...(size ? { size } : {}) };
     const created = (await (await this.call(key, "POST", "/videos", req)).json()) as { id?: string; task_id?: string };
     const id = created.id || created.task_id;
-    if (!id) throw new MediaError("Modelflare 没有返回视频任务编号");
+    if (!id) throw new MediaError("OKINTO 没有返回视频任务编号");
     const deadline = Date.now() + (this.o.videoTimeoutMs ?? 20 * 60_000);
     for (;;) {
       const t = (await (await this.call(key, "GET", `/videos/${encodeURIComponent(id)}`, undefined, 30_000)).json()) as {

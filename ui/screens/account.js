@@ -1,4 +1,4 @@
-// Modelflare 账户相关的弹层：近 N 天用量、通知。设置页「Modelflare」分页里的行会打开它们。
+// OKINTO 账户相关的弹层：近 N 天用量、通知。设置页「OKINTO」分页里的行会打开它们。
 import { useEffect, useState } from "preact/hooks";
 import { html, Seg, Sheet, Skeleton } from "../components/ui.js";
 import { api } from "../lib/api.js";

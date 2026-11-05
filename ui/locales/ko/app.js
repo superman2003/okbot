@@ -20,7 +20,7 @@ export default {
     "botSettings": "“{name}” 설정",
     "botSettingsKeys": "봇 설정 구성",
     "modelflare": "모델 설정",
-    "modelflareKeys": "모델 modelflare 공식 키 api",
+    "modelflareKeys": "모델 okinto 공식 키 api",
     "appearance": "화면 설정",
     "appearanceKeys": "화면 글꼴 글자 크기 동작 애니메이션 투명 흐림 너비",
     "themeSystem": "테마: 시스템 설정",

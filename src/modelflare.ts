@@ -27,7 +27,7 @@ export const MODELFLARE_CLIENT_ID = "anymodel-bot";
 export const MODELFLARE_SCOPES = "openid profile offline_access account api_keys";
 
 /**
- * 注册来源（Modelflare 后台按 utm_source 统计从本程序来的注册与充值）。
+ * 注册来源（OKINTO 后台按 utm_source 统计从本程序来的注册与充值）。
  * 全项目统一：utm_source=anymodelbot&utm_campaign=amb_<位置>。应用内 amb_signup / amb_topup / amb_console …，
  * README 与仓库文档 amb_readme，官网 amb_homepage。
  */
@@ -113,9 +113,9 @@ export type VerifyResult =
       ok: true;
       models: string[];
       /**
-       * 能对话的模型（Modelflare 标为 kind=text 的；旧版网关没有 kind 时为全部）。
+       * 能对话的模型（OKINTO 标为 kind=text 的；旧版网关没有 kind 时为全部）。
        * 连接时把它们全部写进内置网关的 picks：网关对超过 24 个模型、又没有 picks 的服务商
-       * 只放出列表前 24 个，而 Modelflare 的列表按字母排，后面的模型会被截掉。
+       * 只放出列表前 24 个，而 OKINTO 的列表按字母排，后面的模型会被截掉。
        */
       chatModels: string[];
     }

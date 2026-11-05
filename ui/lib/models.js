@@ -1,6 +1,6 @@
 // 模型 ID 的显示与分组（不依赖界面，单元测试直接引入）。
 
-/** 内置网关列出的模型带 "modelflare/" 前缀，Modelflare 直接列出的不带；两种写法都能调用，显示与比较时去掉它 */
+/** 内置网关列出的模型带 "modelflare/" 前缀，OKINTO 直接列出的不带；两种写法都能调用，显示与比较时去掉它 */
 export const normModel = (m) => (m && m.startsWith("modelflare/") ? m.slice("modelflare/".length) : m || "");
 export const sameModel = (a, b) => !!a && !!b && normModel(a) === normModel(b);
 export function playgroundSelection(id) {
@@ -8,10 +8,18 @@ export function playgroundSelection(id) {
   if (!match) return null;
   try { return { group: decodeURIComponent(match[1]), model: match[2] }; } catch { return null; }
 }
-export const shortModel = (m) => {
-  const selected = playgroundSelection(m);
-  return selected ? `${selected.model} · ${selected.group}` : m && m.includes("/") ? m.slice(m.lastIndexOf("/") + 1) : m;
+const decodeLabel = (value) => { try { return decodeURIComponent(value); } catch { return value; } };
+export function displayModel(id) {
+  const plain = String(id || "").replace(/^(?:modelflare|mfb-[\w-]+)\//i, "");
+  const selected = playgroundSelection(plain);
+  return selected ? decodeLabel(selected.model) + " · " + selected.group : decodeLabel(plain);
+}
+export const shortModel = (id) => {
+  const label = displayModel(id);
+  return playgroundSelection(id) ? label : label && label.includes("/") ? label.slice(label.lastIndexOf("/") + 1) : label;
 };
+/** Clean internal OKINTO IDs in historical activity text without rewriting URLs. */
+export const displayModelText = (text) => String(text || "").replace(/(?<![\w:/])(?:(?:modelflare|mfb-[\w-]+)\/)?(?:Okinto|newapi)\/[^\s"'<>\uFF0C\u3002\uFF1B\uFF1A\u3001)]+/gi, (id) => displayModel(id));
 
 /** 官方 API 的模型 id 是 official-<厂商>/<模型>（src/official-providers.ts）；这张表只管显示，test/official-providers.unit.test.ts 核对它和服务端的表一致 */
 const OFFICIAL_NAMES = {
@@ -36,7 +44,7 @@ export const officialSource = (m) => {
   return x ? OFFICIAL_NAMES[x[1]] || x[1] : "";
 };
 
-// —— 模型族：按名字认（Modelflare 的 ID 不带厂商前缀，如 gpt-6-sol、claude-opus-5-5）。数组顺序就是显示顺序，认不出的归 OTHER_FAMILY 放最后 ——
+// —— 模型族：按名字认（OKINTO 的 ID 不带厂商前缀，如 gpt-6-sol、claude-opus-5-5）。数组顺序就是显示顺序，认不出的归 OTHER_FAMILY 放最后 ——
 const FAMILIES = [
   ["GPT", /^(gpt|chatgpt|codex|o\d)/],
   ["Claude", /^claude/],
@@ -92,7 +100,7 @@ export function groupModels(models, q = "") {
     if (needle && !n.toLowerCase().includes(needle)) continue;
     const f = selected ? selected.group : modelFamily(m);
     if (!groups.has(f)) groups.set(f, []);
-    // 官方 API 的模型写明是哪一家：同一个模型可能既有 Modelflare 的也有官方的，走的是两条路、两份账单
+    // 官方 API 的模型写明是哪一家：同一个模型可能既有 OKINTO 的也有官方的，走的是两条路、两份账单
     const source = officialSource(m);
     const label = selected ? selected.model : n.includes("/") ? n.slice(n.indexOf("/") + 1) : n;
     groups.get(f).push([m, source ? `${label} · ${source}` : label]);

@@ -9,7 +9,7 @@ afterEach(() => {
   for (const dir of workspaces.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-function fixture(message: Record<string, unknown>) {
+function fixture(message: Record<string, unknown>, imageResponse?: () => Response) {
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "amb-image-formats-"));
   workspaces.push(workspace);
   const requests: Array<{ url: string; init?: RequestInit; body?: any }> = [];
@@ -17,7 +17,7 @@ function fixture(message: Record<string, unknown>) {
     const url = String(input);
     requests.push({ url, init, body: init?.body ? JSON.parse(String(init.body)) : undefined });
     if (url.includes("/models?")) return Response.json({ data: [{ id: "gemini-3.1-flash-image-preview" }] });
-    if (url.endsWith("/chat/completions")) return Response.json({ choices: [{ message }] });
+    if (url.endsWith("/chat/completions")) return imageResponse ? imageResponse() : Response.json({ choices: [{ message }] });
     if (url === "https://cdn.example/result.png") return new Response("remote image", { headers: { "content-type": "image/png" } });
     throw new Error(`Unexpected request ${url}`);
   }) as typeof fetch;
@@ -57,6 +57,25 @@ describe("New API image response formats", () => {
     expect(body).toMatchObject({ model: "gemini-3.1-flash-image-preview", stream: false });
     expect(body.messages[0].content[1].image_url.url).toBe("data:image/png;base64,cmVmZXJlbmNl");
     expect(fs.readdirSync(path.join(f.workspace, "media"))).toHaveLength(1);
+  });
+
+  it.each([
+    { content: "done", images: [{ url: "https://cdn.example/result.png" }] },
+    { content: [{ type: "image", source: { type: "base64", media_type: "image/png", data: "aW1hZ2U=" } }] },
+  ])("accepts additional image part formats %j", async (message) => {
+    const f = fixture(message); await f.media.run("bot", "image", { prompt: "cat" });
+    expect(fs.readdirSync(path.join(f.workspace, "media"))).toHaveLength(1);
+  });
+
+  it("parses SSE image chunks even when the site streams despite stream:false", async () => {
+    const events = [
+      { choices: [{ delta: { content: "![cat](data:image/png;base64," } }] },
+      { choices: [{ delta: { content: "aW1hZ2U=)" } }] },
+    ];
+    const f = fixture({}, () => new Response(events.map((e) => `data: ${JSON.stringify(e)}\r\n\r\n`).join("") + "data: [DONE]\r\n\r\n", { headers: { "content-type": "text/event-stream" } }));
+    await f.media.run("bot", "image", { prompt: "cat" });
+    const files = fs.readdirSync(path.join(f.workspace, "media"));
+    expect(files).toHaveLength(1); expect(fs.readFileSync(path.join(f.workspace, "media", files[0]), "utf8")).toBe("image");
   });
 
   it("reports a text-only response as a failure", async () => {

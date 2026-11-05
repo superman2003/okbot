@@ -79,7 +79,7 @@ export interface DesktopHooks {
   /** 在系统的文件管理器里显示一个文件（选中它） */
   showItemInFolder?(p: string): void;
   openInBrowser(): void;
-  /** 在系统浏览器里打开外部链接（Modelflare 登录、充值） */
+  /** 在系统浏览器里打开外部链接（OKINTO 登录、充值） */
   openExternal(url: string): void;
   /** 系统钥匙串加密（Electron safeStorage）；不可用时缺省，账户凭据改靠文件权限保护 */
   secretBox?: SecretBox;
@@ -93,9 +93,9 @@ export interface DesktopHooks {
 export interface ModelflareStatus {
   /** managed：经内置网关连接模型；external：使用环境变量指定的端点（开发/测试），界面不做连接管理 */
   mode: "managed" | "external";
-  /** 连上了 Modelflare */
+  /** 连上了 OKINTO */
   connected: boolean;
-  /** 填了至少一家官方 API 的 Key：这时没有 Modelflare 也能用 */
+  /** 填了至少一家官方 API 的 Key：这时没有 OKINTO 也能用 */
   official: boolean;
   keyTail: string;
   line: ModelflareLine;
@@ -197,7 +197,7 @@ export class App {
   web: WebServer | undefined;
   private catalogSweep: NodeJS.Timeout | undefined;
   desktop: DesktopHooks | undefined;
-  /** Modelflare 账户（登录、余额、预算）；start() 时创建，桌面外壳的钥匙串那时已就绪 */
+  /** OKINTO 账户（登录、余额、预算）；start() 时创建，桌面外壳的钥匙串那时已就绪 */
   account!: AccountManager | NewApiAccountManager;
   /** 故障排查页最近一次"测试模型 / 测试代理"的结果（复制诊断信息时带上） */
   lastDiagnostics: { model?: import("./diagnostics.js").ModelTestResult; agent?: import("./diagnostics.js").AgentTestResult } = {};
@@ -272,11 +272,11 @@ export class App {
       turnTimeoutMs: config.agent.turnTimeoutMs,
       idleTimeoutMs: config.agent.idleTimeoutMs,
       approvalTtlMs: config.agent.approvalTtlMs,
-      // 上下文长度来自 Modelflare 的模型资料（和模型选择器里显示的一致）；内置兜底表跟不上新模型
+      // 上下文长度来自 OKINTO 的模型资料（和模型选择器里显示的一致）；内置兜底表跟不上新模型
       contextWindow: async (model) => (await this.infoOf(model))?.context,
       // 桌面版：代理执行的命令用系统代理（环境里没设代理时）；命令行、Docker 只认环境变量
       systemProxy: async (url) => this.desktop?.resolveProxy?.(url),
-      // 代理的对话接口按 Modelflare 目录选（Responses / Anthropic Messages / Chat）；外部端点只当它会 Chat
+      // 代理的对话接口按 OKINTO 目录选（Responses / Anthropic Messages / Chat）；外部端点只当它会 Chat
       apiInfo: async (model) => {
         if (!this.magpie) return undefined;
         const info = await this.infoOf(model);
@@ -331,7 +331,7 @@ export class App {
           () => {},
         ),
       timeZone: opts.timeZone,
-      // 花费按 Modelflare 目录的参考价估算（缓存的那份；没读过就先不算，顺手去读）
+      // 花费按 OKINTO 目录的参考价估算（缓存的那份；没读过就先不算，顺手去读）
       rates: (model) => this.ratesOf(model),
       botBudget: (botId) => {
         const c = this.botBudgetCache;
@@ -364,7 +364,7 @@ export class App {
       },
       route: (botId, model) => this.routeModel(botId, model),
       access: this.access,
-      // Key 可能在 Modelflare 控制台被删了：核对一下，重新签发了就让失败的那条消息再试一次
+      // Key 可能在 OKINTO 控制台被删了：核对一下，重新签发了就让失败的那条消息再试一次
       recoverKey: () => (this.account?.signedIn ? this.account.repairKeys(15_000) : Promise.resolve(false)),
     });
   }
@@ -411,7 +411,7 @@ export class App {
   }
 
   /**
-   * 服务端压缩直连的端点：内置网关不转发 /v1/responses/compact（回 404），压缩请求直接发给模型所在的 Modelflare 连接
+   * 服务端压缩直连的端点：内置网关不转发 /v1/responses/compact（回 404），压缩请求直接发给模型所在的 OKINTO 连接
    * （同一把 Key）。压缩后的请求仍经网关；网关要先开启 nativeCompaction，带压缩项的请求被拒时才会原样报错，
    * 而不是悄悄删掉压缩项重试（那样会丢掉之前的上下文）。外部端点模式下代理只走 Chat（见 apiInfo），不做。
    */
@@ -429,7 +429,7 @@ export class App {
     return { baseUrl: up.baseUrl, apiKey: up.apiKey, model: model.slice(i + 1), headers: this.requestHeaders() };
   }
 
-  /** 每个经 Modelflare 的请求都带的请求头（调用归因） */
+  /** 每个经 OKINTO 的请求都带的请求头（调用归因） */
   requestHeaders(): Record<string, string> {
     return skillHeader(appVersion());
   }
@@ -437,8 +437,8 @@ export class App {
   /**
    * 发给内置网关的模型 id：官方 API 的模型发给那家厂商；其余限定到该机器人用的 provider——开了预算的
    * 机器人用自己的 Key，其余用共用连接。外部端点模式原样发送。
-   * 选了官方 API 的模型，Key 被移除后也不换来源：改走 Modelflare 是另一份账单、另一条数据路径，不能悄悄发生，让网关报错，用户自己选。
-   * 反过来，不带来源的模型名在没有 Modelflare 时可以找填了 Key 的厂商：那是直连，用的是用户自己给的 Key。
+   * 选了官方 API 的模型，Key 被移除后也不换来源：改走 OKINTO 是另一份账单、另一条数据路径，不能悄悄发生，让网关报错，用户自己选。
+   * 反过来，不带来源的模型名在没有 OKINTO 时可以找填了 Key 的厂商：那是直连，用的是用户自己给的 Key。
    */
   routeModel(botId: string, model: string): string {
     if (!this.magpie) return model;
@@ -456,7 +456,7 @@ export class App {
   }
 
   /**
-   * 让每个 Modelflare 连接启用的模型等于 Modelflare 当前列出的全部对话模型（见 setModelPicks）：
+   * 让每个 OKINTO 连接启用的模型等于 OKINTO 当前列出的全部对话模型（见 setModelPicks）：
    * 0.1.8 及以前连接的补上，新上架的加入，下架的移出。读不到列表时什么都不改，下次再试。
    * 顺带给 0.1.8 及以前的连接补上 Responses 和 Messages 地址（ensureModelflareApis）。
    */
@@ -483,7 +483,7 @@ export class App {
     }
   }
 
-  /** 该机器人请求 Modelflare 用的 Key（只在本进程内使用） */
+  /** 该机器人请求 OKINTO 用的 Key（只在本进程内使用） */
   private botKey(botId: string): string {
     if (!this.magpie) return "";
     return this.magpie.providerKey(botProviderId(botId)) || this.magpie.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER);
@@ -593,7 +593,7 @@ export class App {
     return false;
   }
 
-  /** 开启 / 调整 / 关闭机器人预算：先改 Modelflare 上的 Key，成功后才保存设置 */
+  /** 开启 / 调整 / 关闭机器人预算：先改 OKINTO 上的 Key，成功后才保存设置 */
   async setBotBudget(botId: string, budget: BotSettings["budget"]): Promise<Bot> {
     const bot = this.store.getBot(botId);
     if (!bot) throw new Error(t("app.bot_not_found"));
@@ -630,7 +630,7 @@ export class App {
     }
   }
 
-  /** 估算花费用的单价：缓存的 Modelflare 目录里这个模型的（去掉内置网关的 provider 前缀，再试最后一段）；没读过就去读，这次先没有 */
+  /** 估算花费用的单价：缓存的 OKINTO 目录里这个模型的（去掉内置网关的 provider 前缀，再试最后一段）；没读过就去读，这次先没有 */
   private ratesOf(model: string): Rates | undefined {
     const c = this.modelInfoCache;
     if (!c || Date.now() - c.at > 3600_000) void this.modelInfo().catch(() => undefined);
@@ -665,7 +665,7 @@ export class App {
     // 同时来的几次（代理启动时上下文长度和接口一起问）共用一次加载
     this.modelInfoLoading ??= (async () => {
       const key = this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER) ?? "";
-      // 只填了官方 Key 的用户和 Modelflare 没有关系：连公开价格目录也不去读（docs/privacy.md）
+      // 只填了官方 Key 的用户和 OKINTO 没有关系：连公开价格目录也不去读（docs/privacy.md）
       const official = this.magpie?.officialProviderIds().length ?? 0;
       const data = {
         ...(key || !official
@@ -839,7 +839,7 @@ export class App {
     }
   }
 
-  // ---------- Modelflare ----------
+  // ---------- OKINTO ----------
   private allowedModelflareUrls(): string[] {
     return [...new Set([...Object.values(MODELFLARE_LINES), modelflareBaseUrl("auto"), modelflareBaseUrl("cn")])];
   }

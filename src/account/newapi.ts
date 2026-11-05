@@ -286,8 +286,28 @@ export class NewApiAccountManager {
       if (generation !== this.loginGeneration || this.stopped || !this.signedIn) throw new ApiError("OKINTO 登录状态已变更，请重试", 409);
       signal.throwIfAborted();
       const { model: _model, group: _group, ...payload } = body;
-      return await this.raw(endpoint, { method: "POST", headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+      const response = await this.raw(endpoint, { method: "POST", headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
         body: JSON.stringify(endpoint.startsWith("/v1beta/") ? payload : { ...payload, model: selected.model }), signal });
+      // fetch resolves at headers; retain the scoped token until the entire body arrives.
+      const limit = 200 * 1024 * 1024;
+      const chunks: Uint8Array[] = [];
+      let length = 0;
+      const reader = response.body?.getReader();
+      try {
+        if (reader) for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          length += value.byteLength;
+          if (length > limit) throw new ApiError("生图响应超过 200 MB", 502);
+          chunks.push(value);
+        }
+      } catch (error) {
+        await reader?.cancel().catch(() => {});
+        if (error instanceof ApiError) throw error;
+        throw new ApiError(signal.aborted ? "生图请求已取消或超时" : "生图响应传输中断，图片未完整接收；未自动重试以避免重复扣费", 502);
+      } finally { reader?.releaseLock(); }
+      const headers = new Headers({ "content-type": response.headers.get("content-type") ?? "application/json" });
+      return new Response(length ? Buffer.concat(chunks, length) : null, { status: response.status, statusText: response.statusText, headers });
     } finally {
       if (tokenId && auth) {
         // Use the original account even if logout/login raced the generation.

@@ -32,9 +32,9 @@ export function Balance({ account, note }) {
 }
 
 /**
- * 左下角账户：头像字母 + 名称（登录后是 Modelflare 账户名），旁边是设置齿轮。
+ * 左下角账户：头像字母 + 名称（登录后是 OKINTO 账户名），旁边是设置齿轮。
  * 余额不常驻：用户反馈一直看到它，会觉得一直在花钱。点头像才弹出来；余额低于提醒线时另有 LowBalance 提示。
- * 没有余额可看时（没登录、不是 Modelflare 托管），点头像和点齿轮一样打开设置。
+ * 没有余额可看时（没登录、不是 OKINTO 托管），点头像和点齿轮一样打开设置。
  */
 export function AccountButton({ username, account, settingsOn, onSettings, onModelflare }) {
   const [open, setOpen] = useState(false);

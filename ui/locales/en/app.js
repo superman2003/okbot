@@ -21,7 +21,7 @@ export default {
     botSettings: "Settings for “{name}”",
     botSettingsKeys: "bot settings configure",
     modelflare: "OKINTO New API settings",
-    modelflareKeys: "modelflare key api model",
+    modelflareKeys: "okinto key api model",
     appearance: "Appearance settings",
     appearanceKeys: "appearance font text size motion animation glass blur width",
     themeSystem: "Theme: System",

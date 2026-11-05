@@ -362,7 +362,7 @@ export default {
     "line": {
       "name": "API 도메인",
       "sub": "도메인을 선택하거나 응답 시간을 비교하세요. 변경은 새 요청부터 적용됩니다",
-      "keys": "도메인 측정 지연 modelflare origin cf 네트워크 경로"
+      "keys": "도메인 측정 지연 okinto origin cf 네트워크 경로"
     },
     "defaultModel": {
       "name": "기본 모델",

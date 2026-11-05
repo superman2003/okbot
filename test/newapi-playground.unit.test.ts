@@ -14,7 +14,7 @@ import { groupModels, sameModel, shortModel } from "../ui/lib/models.js";
 const origin = "https://api.okinto.com";
 const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const close of cleanups.splice(0)) await close(); vi.useRealTimers(); vi.restoreAllMocks(); });
-function fixture(options: { failGroup?: string; keyMode?: boolean; images?: boolean; imageStatus?: number; failTokenKey?: boolean } = {}) {
+function fixture(options: { failGroup?: string; keyMode?: boolean; delayedImage?: boolean; images?: boolean; imageStatus?: number; failTokenKey?: boolean } = {}) {
   const store = new Store(":memory:");
   const groups: Record<string, { desc: string; ratio: number; models: string[] }> = {
     "OpenAi-Pro": { desc: "Pro models", ratio: 2.5, models: Array.from({ length: 31 }, (_, i) => `chat-${i}`) },
@@ -25,7 +25,7 @@ function fixture(options: { failGroup?: string; keyMode?: boolean; images?: bool
     groups["OpenAi-Pro"].models.push("gpt-image-2.5");
     groups["\u56fd\u6a21"].models.push("gpt-image-2.5", "gemini-3.1-flash-image-preview", "gemini-3-pro-image-native");
   }
-  let tokenName = "";
+  let tokenName = ""; let imageTokenRevoked = false;
   const requests: Array<{ path: string; body?: any; auth: string | null; signal?: AbortSignal | null; init?: RequestInit }> = [];
   let rotations = 0, refreshStatus = 200, expiresAt = Math.floor(Date.now() / 1000) + 900;
   let failNextChat = false;
@@ -53,13 +53,17 @@ function fixture(options: { failGroup?: string; keyMode?: boolean; images?: bool
       expect(headers.get("authorization")).toBe("Bearer sk-private-image-token");
       if (options.imageStatus) return Response.json({ error: { message: "image upstream failed" } }, { status: options.imageStatus });
       if (url.pathname.startsWith("/v1beta")) { expect(body).not.toHaveProperty("model"); expect(body).not.toHaveProperty("group"); return Response.json({ candidates: [{ content: { parts: [{ inlineData: { mimeType: "image/png", data: "aW1hZ2U=" } }] } }] }); }
+      if (options.delayedImage) return new Response(new ReadableStream({ start(controller) { setTimeout(() => {
+        if (imageTokenRevoked) controller.error(new Error("terminated: token revoked before image body completed"));
+        else { controller.enqueue(new TextEncoder().encode(JSON.stringify({ data: [{ b64_json: "aW1hZ2U=" }] }))); controller.close(); }
+      }, 30); } }), { headers: { "content-type": "application/json" } });
       return Response.json({ data: [{ b64_json: "aW1hZ2U=" }] });
     }
     if (headers.get("authorization") !== `Bearer jwt-secret-${rotations}`) return Response.json({ success: false }, { status: 401 });
     if (url.pathname === "/api/token/" && init?.method === "POST") { tokenName = body.name; return Response.json({ success: true }); }
     if (url.pathname === "/api/token/search") return Response.json({ success: true, data: { items: [{ id: 42, name: tokenName }] } });
     if (url.pathname === "/api/token/42/key") return options.failTokenKey ? Response.json({ success: false, message: "key denied" }, { status: 403 }) : Response.json({ success: true, data: { key: "private-image-token" } });
-    if (url.pathname === "/api/token/42" && init?.method === "DELETE") return Response.json({ success: true });
+    if (url.pathname === "/api/token/42" && init?.method === "DELETE") { imageTokenRevoked = true; return Response.json({ success: true }); }
     if (url.pathname === "/api/user/self") return Response.json({ success: true, data: { id: 7, username: "tester", display_name: "Test Account", quota: 2000000, used_quota: 500000 } });
     if (url.pathname === "/api/user/self/groups") return Response.json({ success: true, data: Object.fromEntries(Object.entries(groups).map(([id, g]) => [id, { desc: g.desc, ratio: g.ratio }])) });
     if (url.pathname === "/api/user/models") {
@@ -94,6 +98,13 @@ function fixture(options: { failGroup?: string; keyMode?: boolean; images?: bool
 }
 
 describe("New API playground account", () => {
+  it("keeps the scoped image token until the complete response body is received", async () => {
+    const f = fixture({ images: true, delayedImage: true }); await f.signIn();
+    const response = await fetch(f.relay.baseUrl + "/images/generations", { method: "POST", headers: { authorization: `Bearer ${f.relay.apiKey}`, "content-type": "application/json" }, body: JSON.stringify({ model: playgroundModel("国模", "gpt-image-2.5"), prompt: "cat" }) });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [{ b64_json: "aW1hZ2U=" }] });
+    expect(f.requests.some((r) => r.path === "/api/token/42" && r.init?.method === "DELETE")).toBe(true);
+  });
   it("keeps every group/model pair, including 31+ models and Unicode/slash names", async () => {
     const f = fixture(); await f.signIn();
     expect(f.account.status()).toMatchObject({ state: "signed_in", source: "account", name: "Test Account", balanceUsd: 4, usedUsd: 1 });

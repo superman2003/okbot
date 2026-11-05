@@ -350,7 +350,7 @@ export default {
       keys: "邀请 返利 推广 invite",
       copy: "复制邀请链接",
     },
-    line: {"name": "API 域名", "sub": "自行选择或先测速；切换后对新请求生效", "keys": "域名 测速 延迟 modelflare origin cf 网络 线路"},
+    line: {"name": "API 域名", "sub": "自行选择或先测速；切换后对新请求生效", "keys": "域名 测速 延迟 okinto origin cf 网络 线路"},
     defaultModel: {
       name: "默认模型",
       sub: "机器人没有单独指定时使用",

@@ -268,7 +268,7 @@ async function smoke(out: string): Promise<void> {
   try {
     const wc = win!.webContents;
     await new Promise<void>((r) => (wc.isLoading() ? wc.once("did-finish-load", () => r()) : r()));
-    // 未连接 Modelflare 时是引导页，已连接时是对话页；两者都带 data-screen
+    // 未连接 OKINTO 时是引导页，已连接时是对话页；两者都带 data-screen
     let screen = "";
     for (let i = 0; i < 50; i++) {
       screen = String(await wc.executeJavaScript("document.querySelector('[data-screen]')?.getAttribute('data-screen') || ''"));

@@ -350,7 +350,7 @@ export default {
       keys: "invite referral reward",
       copy: "Copy invite link",
     },
-    line: {"name": "API domain", "sub": "Choose a domain or compare response times. Changes apply to new requests", "keys": "domain speed latency modelflare origin cf network route"},
+    line: {"name": "API domain", "sub": "Choose a domain or compare response times. Changes apply to new requests", "keys": "domain speed latency okinto origin cf network route"},
     defaultModel: {
       name: "Default model",
       sub: "Used when a bot doesn't set its own",

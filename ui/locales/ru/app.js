@@ -21,7 +21,7 @@ export default {
     botSettings: "Настройки «{name}»",
     botSettingsKeys: "бот настройки параметры",
     modelflare: "Настройки моделей",
-    modelflareKeys: "модели modelflare официальный ключ api",
+    modelflareKeys: "модели okinto официальный ключ api",
     appearance: "Настройки оформления",
     appearanceKeys:
       "оформление шрифт текст размер анимация прозрачность размытие ширина",

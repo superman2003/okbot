@@ -1,4 +1,4 @@
-// 模型选择器（magpie picker 的样式；数据来自内置网关的 /v1/models：Modelflare 和官方 API 的模型都在里面）。按模型族分组，组头可以展开收起。
+// 模型选择器（magpie picker 的样式；数据来自内置网关的 /v1/models：OKINTO 和官方 API 的模型都在里面）。按模型族分组，组头可以展开收起。
 // 不做厂商图标栏：各厂商 logo 是第三方商标，未取得授权前不用。
 // 对话和机器人设置里打开时先是 TierPanel：性价比（账户级，Key 的路由策略）、模型智能（沿帕累托前沿的几档，
 // lib/frontier.js）和推理强度（全局）；点模型名进完整列表，照样可以手动选。
@@ -109,7 +109,7 @@ const AA_URL = "https://artificialanalysis.ai/";
 /** 档名：levelOf 的 0…4 */
 const LEVELS = ["min", "low", "medium", "high", "max"];
 
-/** 第一个滑块显示不显示：登录了 Modelflare 账户，而且 Modelflare 认这个设置 */
+/** 第一个滑块显示不显示：登录了 OKINTO 账户，而且 OKINTO 认这个设置 */
 export const showsStrategy = (account) => !!(account && account.state === "signed_in" && account.keyQuality && account.keyQuality.supported);
 /** 按哪种性价比算花费：显示第一个滑块时用账户的，否则按均衡估 */
 export const strategyOf = (account) => (showsStrategy(account) ? account.keyQuality.strategy : DEFAULT_STRATEGY);
@@ -123,7 +123,7 @@ export const levelLabel = (cur, n) => (cur >= 0 ? t(`models.tiers.level.${LEVELS
 /**
  * 选择器的面板（不带状态）。stops / cur / anchor 来自 frontier.js 的 tiers；model 是当前模型。
  * 推理强度只在当前模型支持时出现（showEffort）。
- * 没有第一个滑块时（没登录、Modelflare 不支持）只有模型智能；前沿不到两档时只剩模型名，点它进列表。
+ * 没有第一个滑块时（没登录、OKINTO 不支持）只有模型智能；前沿不到两档时只剩模型名，点它进列表。
  * 右上角的恢复默认只在不是默认（均衡 + 居中那一档 + 自动）时出现。
  */
 export function TierPanel({ strategy, showStrategy, stops, cur, anchor, model, canReset, onStrategy, onStop, onList, onReset, effort, showEffort, onEffort }) {
@@ -203,7 +203,7 @@ export function ModelPicker({ anchor, models, error, current, onPick, onClose, r
         .then((r) => onAccount(r))
         .catch((e) => {
           failed(e);
-          // Modelflare 不支持时状态里 supported 变成 false，第一个滑块随之收起
+          // OKINTO 不支持时状态里 supported 变成 false，第一个滑块随之收起
           return api("/account").then(onAccount).catch(() => {});
         })
         .finally(() => setPendingStrategy(null));

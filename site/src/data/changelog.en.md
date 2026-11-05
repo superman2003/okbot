@@ -4,6 +4,15 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.25 - 2026-11-05
+
+### Fixed
+
+- Fixed interrupted OKINTO image transfers caused by revoking temporary tokens before the complete image response arrived.
+- Improved parsing for JSON, SSE streams and multiple image response formats. Interrupted or invalid responses produce clear errors without automatically generating again.
+- Model names in activity, history and diagnostics now show readable Chinese group names and hide internal routing prefixes.
+- Removed old branding from interface labels and messages in favor of OKINTO / okbot.
+
 ## 0.1.24 - 2026-11-05
 
 ### Fixed

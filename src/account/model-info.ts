@@ -86,7 +86,7 @@ function factorOf(entry: PricingEntry, catalog: PricingCatalog): number | undefi
 
 /**
  * 三种性价比下的价格倍率（相对官方定价）：这个模型可用的公开分组的倍率 × 模型售价倍率。
- * 低价优先取最低的分组，稳定优先取最高的，均衡取居中的那个（偶数个时取居中两个里贵的那个：Modelflare 的均衡
+ * 低价优先取最低的分组，稳定优先取最高的，均衡取居中的那个（偶数个时取居中两个里贵的那个：OKINTO 的均衡
  * 从价格居中的分组开始，先往贵的试）。企业专用的分组（名字带 enterprise）普通账户用不了，不算。
  */
 export function strategyFactors(entry: PricingEntry, catalog: PricingCatalog): Record<RoutingStrategy, number> | undefined {
@@ -167,7 +167,7 @@ export interface GatewayModelRow {
 }
 
 /**
- * 官方 API 模型的资料：按完整 id（official-<厂商>/<模型>）给，不和 Modelflare 目录里的同名模型混。
+ * 官方 API 模型的资料：按完整 id（official-<厂商>/<模型>）给，不和 OKINTO 目录里的同名模型混。
  * 走官方 API 付的就是官方价，所以三种性价比的倍率都是 1；endpoint 是这家厂商在代理上走的接口。
  */
 export function gatewayModelInfo(rows: readonly GatewayModelRow[], endpointOf: (id: string) => string | undefined, nameOf: (id: string) => string, quality?: QualitySnapshot): Record<string, ModelInfo> {

@@ -1,3 +1,4 @@
+import { displayModel } from "../lib/models.js";
 // 设置 → 故障排查：状态（网关、代理进程、版本、目录）、测试模型（经内置网关 vs 直连端点）、测试代理（逐段定位卡在哪）、
 // 重启代理进程、最近日志、复制诊断信息。所有内容由后端脱敏，界面不再拼接任何密钥。
 import { useEffect, useRef, useState } from "preact/hooks";
@@ -150,7 +151,7 @@ function ProbeRow({ name, p }) {
   if (!p) return null;
   if (p.skipped) return html`<${Row} compact name=${name} sub=${p.skipped}><span class="ts-state"><span class="dot"></span>${t("troubleshoot.probe.untested")}</span><//>`;
   const sub = p.ok
-    ? join(p.url, p.echoedModel && t("troubleshoot.probe.echoed", { model: p.echoedModel }), p.reply && t("troubleshoot.probe.reply", { reply: p.reply }))
+    ? join(p.url, p.echoedModel && t("troubleshoot.probe.echoed", { model: displayModel(p.echoedModel) }), p.reply && t("troubleshoot.probe.reply", { reply: p.reply }))
     : join(p.url, p.error);
   return html`<${Row} compact name=${name} sub=${sub} mono=${!p.ok}>
     <span class="ts-state"><span class=${`dot ${p.ok ? "ok" : "err"}`}></span>${p.status ? `HTTP ${p.status}` : t(p.ok ? "troubleshoot.probe.ok" : "troubleshoot.stage.fail")}</span>
@@ -259,7 +260,7 @@ export function TroubleshootPane({ bots, desktop }) {
         <${Button} size="sm" loading=${busy === "model"} disabled=${!!busy} onClick=${testModel}>${t("troubleshoot.test")}<//>
       <//>
       ${modelRes && html`
-        <${Row} compact name=${modelRes.verdict} sub=${t("troubleshoot.model", { model: modelRes.model || t("troubleshoot.none") })}>
+        <${Row} compact name=${modelRes.verdict} sub=${t("troubleshoot.model", { model: displayModel(modelRes.model) || t("troubleshoot.none") })}>
           <${Verdict} ok=${modelRes.direct.ok && (modelRes.gateway.ok || !!modelRes.gateway.skipped)} />
         <//>
         <${ProbeRow} name=${t("troubleshoot.testModel.viaGateway")} p=${modelRes.gateway} />
@@ -269,7 +270,7 @@ export function TroubleshootPane({ bots, desktop }) {
       <//>
       ${agentRes && html`
         <${Row} compact name=${agentRes.ok ? t("troubleshoot.testAgent.ok") : t("troubleshoot.testAgent.stuckAt", { stage: (agentRes.stages.find((s) => s.id === agentRes.stuckAt) || {}).label || t("common.unknown") })}
-          sub=${join(t("troubleshoot.testAgent.bot", { name: botName(agentRes.botId) }), agentRes.model && t("troubleshoot.model", { model: agentRes.model }), t("troubleshoot.testAgent.total", { time: ms(agentRes.ms) }))}>
+          sub=${join(t("troubleshoot.testAgent.bot", { name: botName(agentRes.botId) }), agentRes.model && t("troubleshoot.model", { model: displayModel(agentRes.model) }), t("troubleshoot.testAgent.total", { time: ms(agentRes.ms) }))}>
           <${Verdict} ok=${agentRes.ok} />
         <//>
         ${agentRes.stages.map((s) => html`<${Row} compact key=${s.id} name=${s.label} sub=${s.detail} mono=${s.status === "fail" || s.status === "timeout"}>

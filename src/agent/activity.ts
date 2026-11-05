@@ -5,6 +5,7 @@
 import { summarizeCall } from "./host.js";
 import { t as tr } from "../i18n/index.js";
 import { localProxyFailureHint } from "../network-error.js";
+import { displayModel } from "../account/newapi-types.js";
 import { redactText } from "../log.js";
 
 export interface ActivityStep {
@@ -257,6 +258,7 @@ export class ActivityLog {
   }
 
   private put(step: ActivityStep): void {
+    if (step.kind === "model") step.title = displayModel(step.title);
     for (const k of Object.keys(step) as Array<keyof ActivityStep>) if (step[k] === undefined) delete step[k];
     const i = this.steps.findIndex((s) => s.id === step.id);
     if (i >= 0) this.steps[i] = step;
@@ -274,7 +276,7 @@ export function describeStep(s: ActivityStep): string {
   const doing = s.status === "running" || !!s.cut;
   switch (s.kind) {
     case "model":
-      return doing ? tr("activity.descWaiting", { model: s.title }) : tr("activity.descReplied", { model: s.title, summary: s.summary ? tr("activity.withSummary", { text: s.summary }) : "" });
+      return doing ? tr("activity.descWaiting", { model: displayModel(s.title) }) : tr("activity.descReplied", { model: displayModel(s.title), summary: s.summary ? tr("activity.withSummary", { text: s.summary }) : "" });
     case "tool":
       return doing ? tr("activity.descRunning", { what }) : tr(s.status === "error" ? "activity.descFailed" : "activity.descDone", { what });
     case "retry":

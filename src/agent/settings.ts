@@ -43,7 +43,7 @@ export interface BotSettings {
   /** 头像角色；空 = 由机器人 id 决定 */
   avatar: BotAvatarKey | "";
   /**
-   * 预算（需要登录 Modelflare 账户）：开启后机器人用自己的 API Key，最多花 limitUsd 美元
+   * 预算（需要登录 OKINTO 账户）：开启后机器人用自己的 API Key，最多花 limitUsd 美元
    * （包括这把 Key 已经花掉的）；关闭时与其他机器人共用本机的 Key。
    */
   budget: { enabled: boolean; limitUsd: number };

@@ -45,7 +45,7 @@ export function OfficialKeyForm({ provider, autoFocus = true, onConnected }) {
   </form>`;
 }
 
-/** 引导页：不想用 Modelflare 账户时，选一家、填 Key 直接开始 */
+/** 引导页：不想用 OKINTO 账户时，选一家、填 Key 直接开始 */
 export function OfficialStart({ onConnected, onBack }) {
   const [list, setList] = useState(null);
   const [cur, setCur] = useState("");

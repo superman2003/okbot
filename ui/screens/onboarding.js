@@ -13,7 +13,7 @@ import { LANGS, LANG_NAMES, changeLang, getLangPref, t, useLang } from "../lib/i
 import { MF_CONSOLE, MF_DOCS, MF_KEYS } from "../lib/links.js";
 
 export { MF_CONSOLE, MF_DOCS };
-/** Modelflare 线路的选项 [值, 显示名]（引导页"高级"和设置页共用；按当前语言，渲染时再调） */
+/** OKINTO 线路的选项 [值, 显示名]（引导页"高级"和设置页共用；按当前语言，渲染时再调） */
 export const lineOptions = () => [
   ["auto", t("common.auto")],
   ["global", t("onboarding.line.global")],
@@ -109,7 +109,7 @@ export function KeyForm({ line: initialLine = "auto", onConnected, onFace, showL
 }
 
 /**
- * 登录 / 注册 Modelflare：桌面版由主进程在系统浏览器里打开授权页；浏览器版在新标签页打开（被拦截时
+ * 登录 / 注册 OKINTO：桌面版由主进程在系统浏览器里打开授权页；浏览器版在新标签页打开（被拦截时
  * 用下面的链接）。等待期间每秒读一次账户状态，登录完成后 onSignedIn(status)。
  * manual：Docker / 远程部署，回调回不到这台机器：等待时让用户把登录后地址栏里的链接贴回来。
  */
@@ -315,7 +315,7 @@ export function Onboarding({ gateway, defaultModel, onDone, skipModelStep }) {
   }, []);
   const [face, setFace] = useState("idle");
   const [cue, setCue] = useState(null);
-  // 用自己的官方 API Key，不登录 Modelflare
+  // 用自己的官方 API Key，不登录 OKINTO
   const [ownKey, setOwnKey] = useState(false);
   const onFace = (f) => (f === "error" ? setCue({ kind: "error", at: Date.now() }) : setFace(f));
   const loadModels = () =>

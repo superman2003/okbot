@@ -1,13 +1,13 @@
 /**
- * 官方 API：用户填自己的 Key，模型请求经内置网关直接发给模型厂商，不经过 Modelflare。
+ * 官方 API：用户填自己的 Key，模型请求经内置网关直接发给模型厂商，不经过 OKINTO。
  * - 地址写死在这张表里：界面和接口只能选表里的厂商，不能填地址，Key 不会被发到别的地方。
- * - Key 和 Modelflare 的一样，只存在内置网关的隔离配置里（magpie/supervisor.ts）。
- * - 网关里的 provider id 是 official-<id>，模型 id 是 official-<id>/<厂商的模型名>：和 Modelflare 的同名模型分得开，
- *   也不会被当成 Modelflare 的 openai/x 这种写法。
+ * - Key 和 OKINTO 的一样，只存在内置网关的隔离配置里（magpie/supervisor.ts）。
+ * - 网关里的 provider id 是 official-<id>，模型 id 是 official-<id>/<厂商的模型名>：和 OKINTO 的同名模型分得开，
+ *   也不会被当成 OKINTO 的 openai/x 这种写法。
  */
 import { t } from "./i18n/index.js";
 
-/** 代理用哪个接口（和 Modelflare 目录的 supported_endpoint_types 同一套写法，host.ts 的 agentApi 读它） */
+/** 代理用哪个接口（和 OKINTO 目录的 supported_endpoint_types 同一套写法，host.ts 的 agentApi 读它） */
 export type OfficialApi = "openai-response" | "anthropic" | "openai";
 
 export interface OfficialProvider {
@@ -89,7 +89,7 @@ const NON_CHAT =
 /** OpenAI 这样的日期快照（gpt-x-2025-08-07）：不带日期的那个也在列表里时不再列出，否则同一个模型要占好几行 */
 const DATED = /-\d{4}-\d{2}-\d{2}$/;
 
-/** 从厂商列出的模型里挑出放进选择器的：网关对没有 picks 的服务商只放出前 24 个，所以由我们写明（和 Modelflare 一样） */
+/** 从厂商列出的模型里挑出放进选择器的：网关对没有 picks 的服务商只放出前 24 个，所以由我们写明（和 OKINTO 一样） */
 export function officialPicks(listed: readonly string[]): string[] {
   const all = new Set(listed);
   return listed.filter((m) => !NON_CHAT.test(m) && !(DATED.test(m) && all.has(m.replace(DATED, ""))));
