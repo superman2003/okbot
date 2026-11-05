@@ -4,14 +4,15 @@ import path from "node:path";
 import { saveConfigFile, type AppConfig, type ReasoningEffort } from "./config.js";
 import { Store, type Bot, type ChannelAccount } from "./store/db.js";
 import { OpenAICompatClient, type ModelClient } from "./llm/client.js";
-import { CUSTOM_PROVIDER, customModel, isCustomModel, normalizeUpstreamUrl, validateUpstreamKey, validateUpstreamModel, discoverUpstream, testUpstream } from "./upstream.js";
+import { ConversationHistory } from "./core/history.js";
+import { CUSTOM_PROVIDER, customModel, isCustomModel, normalizeUpstreamUrl, normalizeUpstreamProtocol, normalizeUpstreamAuth, validateUpstreamKey, validateUpstreamModel, discoverUpstream, testUpstream, type UpstreamConnectionInput } from "./upstream.js";
 import { BotRuntime } from "./core/runtime.js";
 import { KeyedQueue } from "./core/queue.js";
 import { deferNotice, interruptedText, takeInterrupted, type Interrupted } from "./core/recovery.js";
 import { Outbox } from "./core/outbox.js";
 import { Delivery, type DeliveryOptions } from "./core/delivery.js";
 import { AccessControl } from "./core/access.js";
-import { MESSENGERS, MESSENGER_LABEL, isMessenger, type ChannelStatus, type MessengerId } from "./core/types.js";
+import { MESSENGERS, MESSENGER_LABEL, isMessenger, isPushChannel, type ChannelStatus, type MessengerId } from "./core/types.js";
 import { botForPeer, defaultBotFor } from "./core/routes.js";
 import { MagpieSupervisor } from "./magpie/supervisor.js";
 import { FeishuChannel } from "./channels/feishu/channel.js";
@@ -191,6 +192,7 @@ export class App {
   private webSearch: WebSearchSettings;
   /** 已授权账号：全局一份，所有机器人共用（设置 › 连接） */
   readonly connections: ConnectionService;
+  readonly history: ConversationHistory;
   /** 新版本提示：只有桌面版启动检查（src/update-check.ts） */
   readonly updates: UpdateChecker;
   /** 目录 Bot：目录同步和实例（docs/bot-framework.md）。目录为空时对现有功能没有影响 */
@@ -255,6 +257,10 @@ export class App {
     // 桌面版搜索走 Chromium 的网络栈（系统代理、PAC、系统证书）；命令行 / Docker 用 Node 的 fetch
     this.search = new SearchService({ settings: () => this.webSearch, fetch: () => this.desktop?.fetch });
     this.connections = new ConnectionService({ kv: this.store, fetch: () => this.desktop?.fetch });
+    this.history = new ConversationHistory({ store: this.store, dataDir: config.dataDir, outbox: this.outbox,
+      owner: (conv) => conv.channel === "web" || isPushChannel(conv.channel) && this.access.owner(conv.account || conv.botId, conv.channel)?.peerId === conv.peerId,
+      weixinReady: (account) => this.channels.get(account)?.weixin?.status.state === "connected",
+    });
     this.updates = new UpdateChecker({ current: appVersion(), fetch: () => this.desktop?.fetch });
     this.catalog = new BotCatalog({ dataDir: config.dataDir, appVersion: appVersion(), ...catalogConfig(), fetch: () => this.desktop?.fetch });
     this.botInstaller = new BotInstaller({
@@ -281,7 +287,7 @@ export class App {
       // 代理的对话接口按 OKINTO 目录选（Responses / Anthropic Messages / Chat）；外部端点只当它会 Chat
       apiInfo: async (model) => {
         if (!this.magpie) return undefined;
-        if (isCustomModel(model)) return { endpoints: ["openai"] };
+        if (isCustomModel(model)) return { endpoints: [this.magpie.customInfo().protocol === "anthropic" ? "anthropic" : "openai"] };
         const info = await this.infoOf(model);
         return info && { endpoints: info.endpoints, reasoning: info.reasoning };
       },
@@ -315,6 +321,7 @@ export class App {
       mediaReady: () => !!this.magpie?.modelflareInfo().connected,
       search: this.search,
       connections: this.connections,
+      history: this.history,
       onNotice: (text) => this.notice("warn", text),
     });
     this.attention = new Attention({ store: this.store });
@@ -863,38 +870,41 @@ export class App {
   }
 
   upstreamStatus() {
-    const info = this.magpie?.customInfo() ?? { connected: false, baseUrl: "", keyTail: "", models: [] };
+    const info = this.magpie?.customInfo() ?? { connected: false, baseUrl: "", protocol: "openai", authMode: "bearer", keyTail: "", models: [] };
     return { ...info, model: isCustomModel(this.config.llm.defaultModel) ? this.config.llm.defaultModel.slice(CUSTOM_PROVIDER.length + 1) : "" };
   }
 
-  private upstreamCredentials(input: { baseUrl?: unknown; key?: unknown }) {
+  private upstreamCredentials(input: UpstreamConnectionInput) {
     if (!this.magpie) throw new Error(t("app.external_mode"));
-    const baseUrl = normalizeUpstreamUrl(input.baseUrl);
     // A saved key may only be reused at its saved address. Editing the URL requires a new key.
     const saved = this.magpie.customInfo();
+    const protocol = normalizeUpstreamProtocol(input.protocol ?? saved.protocol);
+    const authMode = normalizeUpstreamAuth(input.authMode ?? (saved.protocol === protocol ? saved.authMode : undefined), protocol);
+    const baseUrl = normalizeUpstreamUrl(input.baseUrl, protocol);
     const key = validateUpstreamKey(input.key || (saved.baseUrl === baseUrl ? this.magpie.providerKey(CUSTOM_PROVIDER) : ""));
     registerSecret(key);
-    return { baseUrl, key };
+    return { baseUrl, key, protocol, authMode };
   }
 
-  async discoverCustom(input: { baseUrl?: unknown; key?: unknown }): Promise<string[]> {
-    const { baseUrl, key } = this.upstreamCredentials(input);
-    return discoverUpstream(baseUrl, key, this.desktop?.fetch ?? fetch);
+  async discoverCustom(input: UpstreamConnectionInput): Promise<string[]> {
+    const { baseUrl, key, protocol, authMode } = this.upstreamCredentials(input);
+    return discoverUpstream(baseUrl, key, this.desktop?.fetch ?? fetch, protocol, authMode);
   }
 
-  async testCustom(input: { baseUrl?: unknown; key?: unknown; model?: unknown }): Promise<void> {
-    const { baseUrl, key } = this.upstreamCredentials(input);
-    await testUpstream(baseUrl, key, validateUpstreamModel(input.model), this.desktop?.fetch ?? fetch);
+  async testCustom(input: UpstreamConnectionInput & { model?: unknown }): Promise<void> {
+    const { baseUrl, key, protocol, authMode } = this.upstreamCredentials(input);
+    await testUpstream(baseUrl, key, validateUpstreamModel(input.model), this.desktop?.fetch ?? fetch, protocol, authMode);
   }
 
-  async connectCustom(input: { baseUrl?: unknown; key?: unknown; model?: unknown; models?: unknown }): Promise<void> {
-    const { baseUrl, key } = this.upstreamCredentials(input);
+  async connectCustom(input: UpstreamConnectionInput & { model?: unknown; models?: unknown }): Promise<void> {
+    const { baseUrl, key, protocol, authMode } = this.upstreamCredentials(input);
     const model = validateUpstreamModel(input.model);
     if (input.models !== undefined && (!Array.isArray(input.models) || input.models.length > 10000)) throw new Error("模型列表格式无效");
     const models = [...new Set([model, ...(Array.isArray(input.models) ? input.models.map(validateUpstreamModel) : [])])];
-    await this.magpie!.connectCustom(baseUrl, key, models);
+    await this.magpie!.connectCustom(baseUrl, key, models, protocol, authMode);
     this.setDefaultModel(customModel(model));
     this.modelInfoCache = undefined;
+    this.agent.invalidateModelRoutes(`${CUSTOM_PROVIDER}/`);
     await this.runtime.listModels(true).catch(() => []);
     void this.agent.refreshIdle();
   }

@@ -237,7 +237,7 @@ if (fs.existsSync(`${archive}.unpacked`)) fail("unexpected dsh.asar.unpacked");
 
 // ---------- verify ----------
 const listed = new Set(asar.listPackage(archive, { isPack: false }).map((f) => f.replaceAll("\\", "/")));
-for (const f of ["/package.json", "/plugins/amb-bridge.mjs", "/node_modules/@deepseek-ai/dsh/package.json", "/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js"]) {
+for (const f of ["/package.json", "/plugins/amb-bridge.mjs", "/plugins/amb-chat-history.mjs", "/node_modules/@deepseek-ai/dsh/package.json", "/node_modules/@deepseek-ai/dsh-sdk-client/lib/index.js"]) {
   if (!listed.has(f)) fail(`dsh.asar is missing ${f}`);
 }
 if (!fs.existsSync(path.join(out, "node_modules", "node-pty", "prebuilds", `${os}-${cpu}`))) fail("node-pty prebuilds were not copied next to dsh.asar");

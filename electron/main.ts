@@ -280,6 +280,40 @@ async function smoke(out: string): Promise<void> {
       await new Promise((r) => setTimeout(r, 200));
     }
     let channelHistory = false;
+    let groupForwarded = false;
+    let anthropicUpstream = false;
+    if (process.env.AMB_ELECTRON_SMOKE_ANTHROPIC) {
+      const waitFor = async (expression: string) => {
+        for (let i = 0; i < 100; i++) {
+          if (await wc.executeJavaScript(expression)) return;
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+        throw new Error(`Anthropic upstream smoke check timed out: ${expression}`);
+      };
+      await waitFor("document.querySelector('#upstream-protocol') && !document.querySelector('#upstream-protocol').disabled");
+      await wc.executeJavaScript("(()=>{const select=document.querySelector('#upstream-protocol');select.value='anthropic';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      await wc.executeJavaScript("(()=>{const select=document.querySelector('#upstream-auth');select.value='bearer';select.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await wc.executeJavaScript(`(()=>{for(const [id,value] of [['upstream-url',${JSON.stringify(process.env.AMB_ELECTRON_SMOKE_ANTHROPIC)}],['upstream-key','smoke-anthropic-key']]){const input=document.getElementById(id);Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));}})()`);
+      await waitFor("!document.querySelector('[data-upstream-action=discover]').disabled");
+      await wc.executeJavaScript("document.querySelector('[data-upstream-action=discover]').click()");
+      await waitFor("document.querySelector('#upstream-model').value==='native/model-1'");
+      const found = await wc.executeJavaScript("document.querySelector('[data-upstream-result]')?.textContent");
+      await wc.executeJavaScript("document.querySelector('[data-upstream-action=test]').click()");
+      await waitFor(`document.querySelector('[data-upstream-result]')?.textContent && document.querySelector('[data-upstream-result]').textContent!==${JSON.stringify(found)} && !document.querySelector('[data-upstream-action=test]').disabled`);
+      await wc.executeJavaScript("document.querySelector('[data-upstream-action=save]').click()");
+      await waitFor("document.querySelector('[data-screen=chat] textarea')");
+      await wc.executeJavaScript("(()=>{const input=document.querySelector('[data-screen=chat] textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'smoke-anthropic-send');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await waitFor("!document.querySelector('[data-screen=chat] .send').disabled");
+      await wc.executeJavaScript("document.querySelector('[data-screen=chat] .send').click()");
+      await waitFor("document.body.innerText.includes('smoke-anthropic-reply')");
+      const protocol = await wc.executeJavaScript("fetch('/amb/api/upstream').then(r=>r.json()).then(r=>r.protocol)");
+      if (protocol !== "anthropic") throw new Error("Anthropic protocol was not persisted");
+      const auth = await wc.executeJavaScript("fetch('/amb/api/upstream').then(r=>r.json()).then(r=>r.authMode)");
+      if (auth !== "bearer") throw new Error("Anthropic authentication mode was not persisted");
+      anthropicUpstream = true;
+      screen = "chat";
+    }
     if (channelMode) {
       const waitFor = async (expression: string) => {
         for (let i = 0; i < 60; i++) {
@@ -288,7 +322,7 @@ async function smoke(out: string): Promise<void> {
         }
         throw new Error(`Channel history smoke check timed out: ${expression}`);
       };
-      await waitFor("document.body.innerText.includes('smoke-wechat-seed') && !document.body.innerText.includes('smoke-local-only')");
+      await waitFor("document.querySelector('.history-older') && document.querySelector('[data-screen=channel-chat] [role=log]')?.innerText.includes('smoke-wechat-seed') && !document.querySelector('[data-screen=channel-chat] [role=log]').innerText.includes('smoke-local-only')");
       await wc.executeJavaScript("document.querySelector('.history-older').click()");
       await waitFor("document.body.innerText.includes('smoke-wechat-first')");
       core!.store.addMessage("default:weixin:smoke-peer", "assistant", "smoke-wechat-synced");
@@ -308,6 +342,18 @@ async function smoke(out: string): Promise<void> {
       await waitFor("document.querySelector('[data-screen=channel-chat]') && document.body.innerText.includes('smoke-wechat-synced')");
       channelHistory = true;
       screen = "channel-chat";
+      if (process.env.AMB_ELECTRON_SMOKE_GROUP) {
+        await wc.executeJavaScript(`location.hash=${JSON.stringify(`#/group/${process.env.AMB_ELECTRON_SMOKE_GROUP}`)}`);
+        await waitFor("document.querySelector('[data-screen=group] .forwardable-file > button')");
+        await wc.executeJavaScript("document.querySelector('[data-screen=group] .forwardable-file > button').click()");
+        for (let i = 0; i < 60; i++) {
+          const row = core!.store.listOutbox({ limit: 50 }).find((r) => r.kind === "file" && r.body.name === "smoke-group.mp4");
+          if (row?.status === "sent" && row.progress === 0) { groupForwarded = true; break; }
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+        if (!groupForwarded) throw new Error("Group attachment forward button did not deliver the video");
+        screen = "group";
+      }
     }
     // Let the compositor paint the newly mounted screen before the capture.
     await wc.executeJavaScript("document.fonts.ready.then(() => true)");
@@ -319,7 +365,7 @@ async function smoke(out: string): Promise<void> {
     const status = await wc.executeJavaScript("fetch('/amb/api/status').then(r=>r.status)");
     const magpie = await wc.executeJavaScript("fetch('/magpie/').then(r=>r.status)");
     const title = await wc.executeJavaScript("document.title");
-    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, customUpstreamForm, channelHistory, title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
+    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, customUpstreamForm, channelHistory, groupForwarded, anthropicUpstream, title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
   } finally {
     app.quit(); // 任何一步失败也退出，不让冒烟测试挂到超时
   }

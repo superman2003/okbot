@@ -10,6 +10,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const exe = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
 const channelMode = process.argv.includes("--channels");
+const anthropicMode = process.argv.includes("--anthropic");
 let mockServer;
 const channelSent = [];
 const modelCalls = [];
@@ -25,12 +26,32 @@ if (process.platform === "linux" && !process.env.DISPLAY) {
   cmd = "xvfb-run";
 }
 const childEnv = { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot, AMB_LOG_STDOUT: "1", AMB_CATALOG: "off", AMB_PWSH_AUTO_INSTALL: "0" };
-if (channelMode) {
+if (channelMode || anthropicMode) {
   mockServer = http.createServer(async (req, res) => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
+    if (req.url?.startsWith("/c2c/upload")) return res.writeHead(200, { "x-encrypted-param": "smoke-encrypted-media" }).end();
     const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : {};
     const json = (value) => res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(value));
+    if (anthropicMode) {
+      if (req.headers.authorization !== "Bearer smoke-anthropic-key" || req.headers["x-api-key"] || req.headers["anthropic-version"] !== "2023-06-01") return res.writeHead(401).end();
+      if (req.url === "/native/v1/models") return json({ data: [{ id: "native/model-1" }], has_more: false });
+      if (req.url !== "/native/v1/messages" || !body.max_tokens) return res.writeHead(404).end();
+      modelCalls.push({ ...body, protocol: "anthropic" });
+      const text = "smoke-anthropic-reply";
+      const message = { id: "msg_smoke", type: "message", role: "assistant", model: body.model, content: [{ type: "text", text }], stop_reason: "end_turn", stop_sequence: null, usage: { input_tokens: 3, output_tokens: 2 } };
+      if (!body.stream) return json(message);
+      const events = [
+        ["message_start", { message: { ...message, content: [], stop_reason: null, usage: { input_tokens: 3, output_tokens: 0 } } }],
+        ["content_block_start", { index: 0, content_block: { type: "text", text: "" } }],
+        ["content_block_delta", { index: 0, delta: { type: "text_delta", text } }],
+        ["content_block_stop", { index: 0 }],
+        ["message_delta", { delta: { stop_reason: "end_turn", stop_sequence: null }, usage: { output_tokens: 2 } }],
+        ["message_stop", {}],
+      ];
+      res.writeHead(200, { "content-type": "text/event-stream" });
+      return res.end(events.map(([type, value]) => `event: ${type}\ndata: ${JSON.stringify({ type, ...value })}\n\n`).join(""));
+    }
     if (req.url === "/v1/models") return json({ data: [{ id: "mock" }] });
     if (req.url === "/v1/chat/completions") {
       modelCalls.push(body);
@@ -45,10 +66,16 @@ if (channelMode) {
     if (req.url === "/ilink/bot/sendmessage") { channelSent.push(body.msg); return json({ ret: 0 }); }
     if (req.url === "/ilink/bot/getconfig") return json({ ret: 0, typing_ticket: "smoke-ticket" });
     if (req.url === "/ilink/bot/sendtyping") return json({ ret: 0 });
+    if (req.url === "/ilink/bot/getuploadurl") return json({ ret: 0, upload_param: "smoke-upload" });
     res.writeHead(404).end();
   });
   await new Promise((resolve) => mockServer.listen(0, "127.0.0.1", resolve));
   const mockUrl = `http://127.0.0.1:${mockServer.address().port}`;
+  if (anthropicMode) {
+    childEnv.AMB_ELECTRON_SMOKE_ANTHROPIC = `${mockUrl}/native/v1/messages`;
+    childEnv.AMB_AGENT = "off";
+  }
+  if (channelMode) {
   const { Store } = await import("../dist/src/store/db.js");
   const store = new Store(path.join(dataDir, "anymodel.db"));
   store.createBot({ id: "default", name: "Smoke Bot", defaultModel: "mock" });
@@ -62,11 +89,21 @@ if (channelMode) {
   store.saveWeixinAccount({ botId: "default", botToken: "smoke-token", ilinkBotId: "smoke-bot", baseUrl: mockUrl, ownerUserId: "smoke-peer" });
   store.upsertWeixinPeer({ botId: "default", userId: "smoke-peer", contextToken: "smoke-context", quotaRemaining: 10, windowStartedAt: Date.now() });
   store.setConversationAccount(channel.id, "default");
+  store.createBot({ id: "maker", name: "Group Maker" }); store.createBot({ id: "partner", name: "Partner" });
+  const group = store.createGroup("Smoke Group", ["maker", "partner"]);
+  const groupConv = store.ensureConversation("maker", "web", `group:${group.id}`, "Smoke Group", "group");
+  const mediaDir = path.join(dataDir, "workspaces", "maker", "media"); fs.mkdirSync(mediaDir, { recursive: true });
+  const video = path.join(mediaDir, "smoke-group.mp4"); fs.writeFileSync(video, Buffer.concat([Buffer.from("000000186674797069736f6d0000020069736f6d", "hex"), Buffer.alloc(512)]));
+  store.addMessage(`group:${group.id}`, "user", "Create the group video");
+  store.addMessage(groupConv.id, "assistant", "The group video is ready", undefined, { files: [video] });
+  childEnv.AMB_ELECTRON_SMOKE_GROUP = group.id;
   store.close();
   childEnv.AMB_ELECTRON_SMOKE_CHANNELS = "1";
   childEnv.AMB_MAGPIE_BASE_URL = `${mockUrl}/v1`;
   childEnv.AMB_WEIXIN_API_BASE = mockUrl;
+  childEnv.AMB_WEIXIN_CDN_BASE = `${mockUrl}/c2c`;
   childEnv.AMB_AGENT = "off";
+  }
 }
 delete childEnv.ELECTRON_RUN_AS_NODE;
 // Keep early startup diagnostics available even when no SMOKE line is emitted.
@@ -98,7 +135,10 @@ if (!line) {
 const res = JSON.parse(line.slice(6));
 console.log(res, "截图：", shot);
 const sentText = channelSent.map((m) => m.item_list?.[0]?.text_item?.text || "");
+const groupForwarded = !channelMode || res.groupForwarded && channelSent.some((m) => m.item_list?.some((item) => item.video_item));
 const twoWay = !channelMode || (sentText.some((text) => text.includes("smoke-desktop-send") && !text.includes("smoke-bot-reply")) && sentText.some((text) => text.includes("smoke-bot-reply:smoke-desktop-send")) && modelCalls.some((call) => call.messages.some((m) => m.content === "smoke-wechat-seed")));
-const ok = r.status === 0 && res.hasUi && twoWay && (channelMode ? res.channelHistory : res.customUpstreamForm && res.magpieState === "running") && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && fs.existsSync(shot);
-if (channelMode) console.log({ twoWay, channelMessages: channelSent.length, modelRequests: modelCalls.length });
+const protocolPassed = !anthropicMode || (res.anthropicUpstream && modelCalls.some((call) => call.stream === false) && modelCalls.some((call) => call.stream === true && call.model === "native/model-1"));
+const ok = r.status === 0 && res.hasUi && twoWay && groupForwarded && protocolPassed && (channelMode ? res.channelHistory : anthropicMode ? res.anthropicUpstream && res.magpieState === "running" : res.customUpstreamForm && res.magpieState === "running") && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && fs.existsSync(shot);
+if (channelMode) console.log({ twoWay, groupForwarded, channelMessages: channelSent.length, modelRequests: modelCalls.length });
+if (anthropicMode) console.log({ anthropicUpstream: protocolPassed, modelRequests: modelCalls.length });
 process.exit(ok ? 0 : 1);

@@ -26,6 +26,7 @@ export interface BridgeHandlers {
   search?(body: any, signal: AbortSignal): Promise<unknown>;
   /** amb-connections 插件：已授权账号的一次工具调用（signal = 连接断了：工具超时或回合被中止） */
   connections?(body: any, signal: AbortSignal): Promise<unknown>;
+  history?(body: any, signal: AbortSignal): Promise<unknown>;
   /** amb-control 插件：长轮询取宿主的指令（signal = 连接断了）、回报结果 */
   control?: { poll(body: any, signal: AbortSignal): Promise<unknown>; result(body: any): void };
   /** 服务端压缩：长会话的 /v1/responses 换上上游压缩过的历史（见 server-compaction.ts） */
@@ -285,6 +286,11 @@ export class AgentBridge {
       const ac = new AbortController();
       res.on("close", () => ac.abort());
       out = await this.h.connections(body, ac.signal);
+    }
+    else if (url === "/dsh/history" && this.h.history) {
+      const ac = new AbortController();
+      res.on("close", () => ac.abort());
+      out = await this.h.history(body, ac.signal);
     }
     else if (url === "/dsh/control/poll" && this.h.control) {
       const ac = new AbortController();

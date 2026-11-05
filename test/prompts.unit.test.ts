@@ -347,7 +347,9 @@ describe("渠道说明与第一条消息", () => {
 
   it("名字和人设都空时没有机器人设定", () => {
     expect(botIdentity("", " ")).toBe("");
-    expect(botPrompt({ name: "", persona: "", memory: false })).toBe(CHAT_RULES);
+    const prompt = botPrompt({ name: "", persona: "", memory: false });
+    expect(prompt).toContain(CHAT_RULES);
+    expect(prompt).not.toContain("# 机器人设定");
   });
 });
 

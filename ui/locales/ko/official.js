@@ -5,7 +5,7 @@ export default {
     "title": "사용자 지정 중계 서버",
     "summary": "API URL과 키를 입력하고 업스트림 모델을 가져와 기본 모델 선택",
     "configure": "설정",
-    "note": "OpenAI Chat Completions 호환 서비스에 연결합니다. 키는 이 기기에만 저장됩니다.",
+    "note": "OpenAI 또는 Anthropic 호환 중계, 공식 API, 로컬 서비스에 연결합니다. 키는 기기에만 저장합니다.",
     "url": "API 기본 URL",
     "keepKey": "비워 두면 저장된 키 사용 ••••{tail}",
     "discover": "업스트림 모델 가져오기",
@@ -18,7 +18,11 @@ export default {
     "testOk": "선택한 모델이 정상 응답했습니다.",
     "found": "모델 {count}개를 가져왔습니다. 대화 모델을 선택하고 테스트하세요.",
     "save": "저장하고 이 모델 사용",
-    "remove": "사용자 지정 서버 연결 해제"
+    "remove": "사용자 지정 서버 연결 해제",
+    "protocol": "API 프로토콜",
+    "openaiNote": "Bearer 키로 Chat Completions(/chat/completions)를 사용합니다.",
+    "anthropicNote": "Anthropic Messages(/v1/messages)에 x-api-key 또는 Bearer 인증을 선택합니다. 루트, /v1, 전체 Messages URL 및 모델 ID 직접 입력을 지원합니다.",
+    "authMode": "Anthropic 인증 방식"
 },
   "useOwn": "내 API 키 사용",
   "choose": "서비스 선택",

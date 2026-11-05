@@ -13,6 +13,7 @@ import type { MediaModel, MediaPlan, MediaService } from "./media.js";
 import { SearchAborted, type SearchService, type WebSource } from "./search.js";
 import { ConnectionError } from "./accounts.js";
 import type { ConnectionService } from "./connections.js";
+import type { ConversationHistory } from "../core/history.js";
 import { APPROVAL_TTL_MS, ApprovalCenter, TASK_APPROVAL_TTL_MS, type QuestionItem } from "./approvals.js";
 import { MemoryError, MemoryStore, type Scope } from "./memory.js";
 import type { TaskHost, TaskService } from "../tasks/service.js";
@@ -59,6 +60,7 @@ export interface AgentManagerOptions {
   search?: SearchService;
   /** 已授权账号（全局，amb-connections 插件经 bridge 调用）；缺省时机器人没有这些工具 */
   connections?: ConnectionService;
+  history?: ConversationHistory;
   /** 需要让用户看到的提示（代理进程起不来等） */
   onNotice?: (text: string) => void;
   /** 模型的上下文长度（OKINTO 模型资料），写进 DSH 补丁 */
@@ -201,6 +203,7 @@ export class AgentManager {
       media: (b) => this.mediaOp(b),
       search: (b, signal) => this.searchOp(b, signal),
       connections: (b, signal) => this.connectionOp(b, signal),
+      history: (b, signal) => this.historyOp(b, signal),
       // amb-control 插件按机器人取指令；不认识的机器人（已删除、已停止）让它别再来
       control: {
         poll: (b, signal) => this.hosts.get(String(b?.botId ?? ""))?.control.poll(b, signal) ?? Promise.resolve({ stop: true }),
@@ -305,6 +308,11 @@ export class AgentManager {
   /** PowerShell 等启动参数变了：空闲的代理进程在后台换用新的（正在跑回合的等下一条消息） */
   async refreshIdle(): Promise<void> {
     await Promise.all([...this.hosts.values()].map((h) => h.restartIfStale().catch(() => undefined)));
+  }
+
+  invalidateModelRoutes(prefix: string): void {
+    this.apiFallbacks.clearPrefix(prefix);
+    for (const host of this.hosts.values()) host.invalidateModelRoutes(prefix);
   }
 
   /** Computer Use 的系统可用性 + 本机器人开关，供界面与 /status 显示 */
@@ -703,6 +711,25 @@ export class AgentManager {
    * 已授权账号：全局一份，所有机器人共用，机器人之间的差别只来自权限。写操作在这里再查一次（插件只是不给写工具）：
    * 只读机器人和观察规则不能写。错误文字直接给模型看（accounts.ts）。
    */
+  private async historyOp(b: any, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
+    const botId = String(b?.botId ?? "");
+    const sessionId = String(b?.sessionId ?? "");
+    if (!this.o.history || !this.hosts.has(botId)) return { error: "Chat history is unavailable." };
+    const conv = this.o.store.conversationForSession(sessionId) || this.taskOf(botId, sessionId)?.conversationId || this.ruleOf(botId, sessionId)?.conversationId;
+    if (!conv) return { error: "The current conversation could not be resolved." };
+    const op = String(b?.op ?? "");
+    const args = b?.args ?? {};
+    try {
+      if (op === "send") {
+        if (this.settings(botId).permission === "readonly" || this.ruleOf(botId, sessionId)?.mode === "observe") return { error: "This session is read-only and cannot send files." };
+        return { text: JSON.stringify(await this.o.history.send(botId, conv, args, signal)) };
+      }
+      if (op === "list") return { text: JSON.stringify(this.o.history.list(botId, conv, String(args.query ?? ""))) };
+      if (op === "read") return { text: JSON.stringify(this.o.history.read(botId, conv, args)) };
+      return { error: "Unknown history operation." };
+    } catch (e) { return { error: (e as Error).message }; }
+  }
+
   private async connectionOp(b: any, signal: AbortSignal): Promise<{ text?: string; error?: string }> {
     const botId = String(b?.botId ?? "");
     const connections = this.o.connections;

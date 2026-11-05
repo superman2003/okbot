@@ -56,6 +56,11 @@ export default {
     "submit": "送信"
   },
   "file": {
+    "forwardWechat": "自分の WeChat に送信",
+    "forwardSent": "WeChat がファイルを受け付けました",
+    "forwardQueued": "WeChat への送信待ちです",
+    "chooseWechat": "受信する WeChat アカウントを選択",
+
     "open": "{name} を開く",
     "reveal": "フォルダーで表示",
     "gone": "ファイルが見つかりません"

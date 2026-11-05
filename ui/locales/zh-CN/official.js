@@ -5,7 +5,7 @@ export default {
     "title": "自定义中转站",
     "summary": "自己填写 URL 和 Key，获取上游模型并指定默认模型",
     "configure": "配置",
-    "note": "连接支持 OpenAI Chat Completions 的中转站或本地服务。Key 只保存在本机。",
+    "note": "连接 OpenAI 或 Anthropic 兼容中转站、官方接口及本地服务。Key 只保存在本机。",
     "url": "API Base URL",
     "keepKey": "留空沿用已保存的 Key ••••{tail}",
     "discover": "获取上游模型",
@@ -18,7 +18,11 @@ export default {
     "testOk": "模型测试成功，可以正常回复。",
     "found": "已获取 {count} 个模型，请选择对话模型后测试。",
     "save": "保存并使用此模型",
-    "remove": "断开自定义中转站"
+    "remove": "断开自定义中转站",
+    "protocol": "接口协议",
+    "openaiNote": "使用 Chat Completions 接口（/chat/completions），以 Bearer Key 鉴权。",
+    "anthropicNote": "使用 Anthropic Messages（/v1/messages），鉴权可选 x-api-key 或 Bearer。可填根地址、/v1 或完整 /v1/messages；模型列表不受支持时可手填 ID。",
+    "authMode": "Anthropic 鉴权方式"
 },
   "useOwn": "使用自己的 API Key",
   "choose": "选择模型服务",

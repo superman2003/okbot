@@ -5,7 +5,7 @@ export default {
     "title": "カスタム中継サーバー",
     "summary": "API URL とキーを入力し、上流モデルを取得して既定モデルを選択",
     "configure": "設定",
-    "note": "OpenAI Chat Completions 互換のサービスに接続します。キーはこの端末にのみ保存されます。",
+    "note": "OpenAI・Anthropic 互換の中継、公式 API、ローカルサービスに接続します。キーは端末に保存します。",
     "url": "API ベース URL",
     "keepKey": "空欄なら保存済みキーを使用 ••••{tail}",
     "discover": "上流モデルを取得",
@@ -18,7 +18,11 @@ export default {
     "testOk": "選択したモデルから応答がありました。",
     "found": "{count} 件のモデルを取得しました。チャットモデルを選んでテストしてください。",
     "save": "保存してこのモデルを使用",
-    "remove": "カスタム接続を解除"
+    "remove": "カスタム接続を解除",
+    "protocol": "API プロトコル",
+    "openaiNote": "Bearer キーで Chat Completions（/chat/completions）を利用します。",
+    "anthropicNote": "Anthropic Messages（/v1/messages）で x-api-key または Bearer 認証を選べます。ルート、/v1、Messages URL に対応し、モデル ID の直接入力も可能です。",
+    "authMode": "Anthropic の認証方式"
 },
   "useOwn": "自分の API キーを使う",
   "choose": "サービスを選択",

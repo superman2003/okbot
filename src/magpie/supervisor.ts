@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { lineLogger, logger, registerSecret } from "../log.js";
 import { t } from "../i18n/index.js";
 import { BOT_PROVIDER_PREFIX, MODELFLARE_PROVIDER, botProviderId, keyTail, modelflareApiBases } from "../modelflare.js";
-import { CUSTOM_PROVIDER } from "../upstream.js";
+import { CUSTOM_PROVIDER, type UpstreamProtocol, type UpstreamAuth } from "../upstream.js";
 import { OFFICIAL_PREFIX, officialBases, officialLabel, officialPicks, officialProviderId, type OfficialProvider } from "../official-providers.js";
 
 const log = logger("magpie");
@@ -414,15 +414,19 @@ export class MagpieSupervisor {
     this.state = "stopped";
   }
 
-  customInfo(): { connected: boolean; baseUrl: string; keyTail: string; models: string[] } {
+  customInfo(): { connected: boolean; baseUrl: string; protocol: UpstreamProtocol; authMode: UpstreamAuth; keyTail: string; models: string[] } {
     const p = this.readProviderRaw(CUSTOM_PROVIDER);
     const key = this.providerKey(CUSTOM_PROVIDER);
-    return { connected: !!key, baseUrl: String(p?.chat ?? ""), keyTail: keyTail(key), models: this.modelPicks(CUSTOM_PROVIDER) };
+    const protocol = p?.baseAPI === "anthropic" || (!p?.chat && !!p?.anthropic) ? "anthropic" : "openai";
+    const baseUrl = protocol === "anthropic" && p?.anthropic ? `${String(p.anthropic).replace(/\/+$/, "")}/v1` : String(p?.chat ?? "");
+    const authMode = protocol === "openai" || p?.authHeader === "bearer" ? "bearer" : "api-key";
+    return { connected: !!key, baseUrl, protocol, authMode, keyTail: keyTail(key), models: this.modelPicks(CUSTOM_PROVIDER) };
   }
 
-  async connectCustom(baseUrl: string, key: string, models: string[]): Promise<void> {
+  async connectCustom(baseUrl: string, key: string, models: string[], protocol: UpstreamProtocol = "openai", authMode: UpstreamAuth = "api-key"): Promise<void> {
     registerSecret(key);
-    const fields = { name: "Custom upstream", chat: baseUrl, key, models };
+    const fields = { name: "Custom upstream", key, models, baseAPI: protocol === "anthropic" ? "anthropic" : "chat",
+      chat: protocol === "openai" ? baseUrl : "", anthropic: protocol === "anthropic" ? baseUrl.replace(/\/v1$/, "") : "", responses: "", gemini: "", authHeader: protocol === "anthropic" ? authMode === "bearer" ? "bearer" : "x-api-key" : "", modelsURL: `${baseUrl}/models` };
     if (this.hasProvider(CUSTOM_PROVIDER)) return this.saveProvider(CUSTOM_PROVIDER, fields);
     if (this.state !== "running") throw new Error(t("magpie.not_running"));
     const res = await fetch(`${this.webOrigin}/api/provider/save`, {
@@ -683,7 +687,7 @@ export class MagpieSupervisor {
     });
     if (!res.ok) throw new Error(t("magpie.save_failed", { status: res.status, body: (await res.text()).slice(0, 200) }));
     const saved = this.readProviderRaw(id);
-    for (const [k, v] of Object.entries(patch)) if (JSON.stringify(saved?.[k] ?? {}) !== JSON.stringify(v ?? {})) throw new Error(t("magpie.verify_failed"));
+    for (const [k, v] of Object.entries(patch)) if (JSON.stringify(saved?.[k] ?? (v === "" ? "" : {})) !== JSON.stringify(v ?? {})) throw new Error(t("magpie.verify_failed"));
   }
 
   private readProviderRaw(id: string): Record<string, unknown> | undefined {

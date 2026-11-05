@@ -4,6 +4,17 @@
 
 这里只写用户能感受到的变化。更早的版本见 [GitHub 发布页](https://github.com/modelflare-ai/AnyModelBot/releases)。
 
+## 0.1.28 - 2026-11-05
+
+### 新增
+
+- 自定义上游支持 Anthropic Messages 协议，可在界面选择 OpenAI Chat Completions 或 Anthropic Messages。
+- Anthropic 模型获取支持 x-api-key 或 Bearer 鉴权，并携带版本请求头，支持列表分页；测试和真实对话走 /v1/messages。
+- 支持根地址、/v1 和完整 Messages 地址，保留自定义路径前缀，避免重复拼接 /v1。
+- 切换协议会清除旧接口配置和智能体路由缓存；已有 OpenAI 配置继续兼容。
+- 新增聊天历史查询和群聊成果引用，其他成员生成的视频和文件可按成果编号查找。
+- 新增发送到本人微信的成果转发工具，群聊附件旁也可直接点击转发；保留待发送与失败状态，避免误报已送达。
+
 ## 0.1.27 - 2026-11-05
 
 ### 修复

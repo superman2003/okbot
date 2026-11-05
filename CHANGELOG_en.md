@@ -4,6 +4,17 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.28 - 2026-11-05
+
+### Added
+
+- Choose OpenAI Chat Completions or Anthropic Messages for a custom upstream.
+- Anthropic discovery supports x-api-key or Bearer auth, a version header and pagination; tests and conversations use /v1/messages.
+- Accept site roots, /v1 and full Messages URLs while preserving custom path prefixes.
+- Protocol switches clear old endpoint settings and cached agent routes. Existing OpenAI settings remain compatible.
+- Add scoped chat-history lookup and shared group artifact references, including files made by other members.
+- Forward recorded artifacts to the logged-in WeChat owner through a tool or group attachment button, with accurate queued and failure states.
+
 ## 0.1.27 - 2026-11-05
 
 ### Fixed

@@ -1,14 +1,18 @@
 # okbot
 
+**群聊成果转发：** Agent 可用 `chat_history` 查找历史与其他成员交付的附件，再用 `send_to_weixin` 发到你扫码绑定的本人微信。也可直接点击群聊附件下方「发送到我的微信」。现有视频无需重新生成；文件已被删除时会明确提示。微信窗口或额度受限时会排队，待你从微信再次发消息后补送。
+
+**Anthropic 协议：** 自定义中转站新增「接口协议」选择。选择 Anthropic Messages 后，可填写根地址、`/v1` 或完整 `/v1/messages` 地址；模型获取、测试和智能体对话都会使用对应鉴权与协议。没有模型列表时可手填模型 ID。
+
 自己填写 API 地址和 Key，连接你选择的模型服务的个人 AI 助手。
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[下载 Windows 安装包](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [问题反馈](https://github.com/superman2003/okbot/issues) · [MIT 许可证](./LICENSE)
+[下载 Windows 安装包](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1) · [问题反馈](https://github.com/superman2003/okbot/issues) · [MIT 许可证](./LICENSE)
 
 ## 📥 下载
 
-当前发布提供 **Windows x64 安装版**：[okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe)，约 160 MB。[发布页](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1)附带 `SHA256SUMS` 校验文件。
+当前发布提供 **Windows x64 安装版**：[okbot-0.1.28-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.28-1/okbot-0.1.28-win-x64.exe)，约 160 MB。[发布页](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1)附带 `SHA256SUMS` 校验文件。
 
 安装包已包含 Electron、magpie 模型网关、DeepSeek Harness 运行时和 Cua Driver，无需另装 Node.js 或 Go。本地构建未做数字签名。关闭窗口默认收到托盘，可通过托盘菜单退出。
 
@@ -19,12 +23,12 @@
 ## 自定义模型服务
 
 1. 首次打开，或进入「设置 → 模型 → 自定义中转站 → 配置」。
-2. 填写 **API Base URL** 与 **API Key**，例如 `https://your-api.example/v1`。
+2. 填写 **API Base URL** 与 **API Key**，例如 `https://your-api.example/v1`，并选择对应的接口协议。
 3. 点击「获取上游模型」，从列表选择模型；上游不提供列表时可手填准确的模型 ID。
 4. 点击「测试所选模型」确认能回复。此操作会发送一次简短请求，可能产生上游 API 费用。
 5. 点击「保存并使用此模型」。连接与默认模型会保存在本机，重启后继续使用。
 
-此入口支持 **OpenAI Chat Completions 兼容接口**，需要 `/chat/completions`；`/models` 可选。仅提供其他协议的接口不能直接使用此入口。站点根地址自动补 `/v1`，自定义 API 路径会保留。获取列表表示 Key 可见的模型，实际对话能力以测试结果为准。
+此入口支持 **OpenAI Chat Completions**（`/chat/completions`）与 **Anthropic Messages**（`/v1/messages`），请按上游文档选择。`/models` 可选。OpenAI 根地址自动补 `/v1`；Anthropic 支持根地址、`/v1` 或完整 Messages 地址，自定义前缀会保留。获取列表表示 Key 可见的模型，实际对话能力以测试结果为准。
 
 模型请求发送到你配置的服务，能力、额度和费用由该服务及模型决定。原有官方 API 和 OKINTO 接入路径仍保留。已有机器人或对话单独指定过模型时，需要在对应位置切换模型。
 

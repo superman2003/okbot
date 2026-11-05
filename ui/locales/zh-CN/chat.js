@@ -57,6 +57,11 @@ export default {
     submit: "提交",
   },
   file: {
+    "forwardWechat": "发送到我的微信",
+    "forwardSent": "微信接口已接收文件",
+    "forwardQueued": "文件已加入微信发送队列，等待投递",
+    "chooseWechat": "选择接收成果的微信账号",
+
     open: "打开 {name}",
     reveal: "在文件夹中显示",
     gone: "找不到文件",

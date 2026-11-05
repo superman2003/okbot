@@ -113,6 +113,12 @@ export class ApiFallbacks {
     return [...this.m].filter(([, e]) => e.until > now).map(([model, e]) => ({ model, ...e }));
   }
 
+  clearPrefix(prefix: string): void {
+    let changed = false;
+    for (const model of this.m.keys()) if (model.startsWith(prefix)) { this.m.delete(model); changed = true; }
+    if (changed) this.save();
+  }
+
   private save(): void {
     if (!this.file) return;
     try {

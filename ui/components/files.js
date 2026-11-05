@@ -40,9 +40,17 @@ export function ImageFile({ file, conv, canOpen, onLoad }) {
 }
 
 /** 一条回复交付的文件，按交付的顺序；放得下就排在一行 */
-export function DeliveredFiles({ files, conv, canOpen, onLoad }) {
+function ForwardButton({ onForward }) {
+  const [busy, setBusy] = useState(false);
+  return html`<button type="button" class="text" disabled=${busy} onClick=${async () => { setBusy(true); try { await onForward(); } catch (e) { failed(e); } finally { setBusy(false); } }}>${t(busy ? "common.loading" : "chat.file.forwardWechat")}</button>`;
+}
+
+export function DeliveredFiles({ files, conv, canOpen, onLoad, onForward }) {
   if (!files?.length) return null;
   return html`<div class="msg-files">
-    ${files.map((f) => (f.image ? html`<${ImageFile} key=${f.path} file=${f} conv=${conv} canOpen=${canOpen} onLoad=${onLoad} />` : html`<${FileCard} key=${f.path} file=${f} conv=${conv} canOpen=${canOpen} />`))}
+    ${files.map((f, index) => {
+      const card = f.image ? html`<${ImageFile} key=${f.path} file=${f} conv=${conv} canOpen=${canOpen} onLoad=${onLoad} />` : html`<${FileCard} key=${f.path} file=${f} conv=${conv} canOpen=${canOpen} />`;
+      return onForward && !f.gone ? html`<div class="forwardable-file" key=${f.path}>${card}<${ForwardButton} onForward=${() => onForward(index)} /></div>` : card;
+    })}
   </div>`;
 }

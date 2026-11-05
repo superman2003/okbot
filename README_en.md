@@ -1,14 +1,18 @@
 # okbot
 
+**Group artifacts:** Agents can use `chat_history` to find shared group files and `send_to_weixin` to forward them to the logged-in WeChat owner. Group attachments also have a direct forwarding button. Existing files are reused; missing files and queued delivery are reported accurately.
+
+**Anthropic support:** Choose Anthropic Messages in the custom upstream protocol field. Enter the site root, `/v1` or the full `/v1/messages` URL. Discovery, testing and agent conversations use the selected protocol and authentication; manual model IDs remain available.
+
 A personal AI assistant that connects to the model service you choose with your own API URL and key.
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows download](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [Issues](https://github.com/superman2003/okbot/issues) · [MIT license](./LICENSE)
+[Windows download](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1) · [Issues](https://github.com/superman2003/okbot/issues) · [MIT license](./LICENSE)
 
 ## 📥 Download
 
-The current release provides a **Windows x64 installer**: [okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe), about 160 MB. The [release page](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) includes `SHA256SUMS`.
+The current release provides a **Windows x64 installer**: [okbot-0.1.28-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.28-1/okbot-0.1.28-win-x64.exe), about 160 MB. The [release page](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1) includes `SHA256SUMS`.
 
 Electron, the magpie gateway, DeepSeek Harness and Cua Driver are included. No separate Node.js or Go installation is needed. The local build is unsigned. Closing the window hides the app to the tray; use the tray menu to quit.
 
@@ -22,7 +26,7 @@ Upstream supports several operating systems. This release provides only the Wind
 4. Test the selected model. This sends one short request and may incur normal API charges.
 5. Save and use the model. The connection and default model are stored locally and survive restarts.
 
-This entry supports **OpenAI-compatible Chat Completions**: `/chat/completions` is required and `/models` is optional. Services offering only other protocols cannot use this entry directly. Root URLs get `/v1`; custom API paths are preserved. A listed model is visible to the key; use the test to check chat availability.
+This entry supports **OpenAI Chat Completions** and **Anthropic Messages**. Select the protocol required by your upstream; `/models` is optional. OpenAI root URLs get `/v1`. Anthropic accepts roots, `/v1` or full Messages URLs and preserves custom prefixes. Use the test to check chat availability.
 
 Requests go to your configured service, which determines capabilities, quotas and billing. Existing official-provider and OKINTO connections remain available. Bots or conversations with their own model selection must be switched separately.
 

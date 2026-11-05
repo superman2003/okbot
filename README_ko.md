@@ -1,14 +1,18 @@
 # okbot
 
+**그룹 결과물:** `chat_history`로 공유 파일을 찾고 `send_to_weixin`이나 첨부 버튼으로 본인 WeChat에 전달합니다. 기존 파일을 사용하며 삭제된 파일이나 전송 대기를 명확히 표시합니다.
+
+**Anthropic 지원:** 프로토콜에서 Anthropic Messages를 선택합니다. 루트, `/v1` 또는 전체 `/v1/messages` URL을 입력하세요. 모델 조회, 테스트 및 에이전트 대화에 선택한 프로토콜과 인증을 사용하며 모델 ID를 직접 입력할 수도 있습니다.
+
 직접 입력한 API URL과 키로 원하는 모델 서비스에 연결하는 개인 AI 어시스턴트입니다.
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows 다운로드](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [문제 보고](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
+[Windows 다운로드](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1) · [문제 보고](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
 
 ## 📥 다운로드
 
-현재 릴리스는 **Windows x64 설치 파일** [okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe)(약 160 MB)을 제공합니다. [릴리스 페이지](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1)에 `SHA256SUMS`도 있습니다.
+현재 릴리스는 **Windows x64 설치 파일** [okbot-0.1.28-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.28-1/okbot-0.1.28-win-x64.exe)(약 160 MB)을 제공합니다. [릴리스 페이지](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1)에 `SHA256SUMS`도 있습니다.
 
 Electron, magpie, DeepSeek Harness, Cua Driver를 포함합니다. Node.js나 Go를 따로 설치할 필요가 없습니다. 이 빌드는 서명되지 않았습니다. 창을 닫으면 트레이로 이동하며 트레이 메뉴에서 종료할 수 있습니다. 다른 OS는 소스 빌드를 참고하세요.
 
@@ -20,7 +24,7 @@ Electron, magpie, DeepSeek Harness, Cua Driver를 포함합니다. Node.js나 Go
 4. 선택한 모델을 테스트합니다. 짧은 요청이 전송되며 일반 API 요금이 발생할 수 있습니다.
 5. 저장하고 사용합니다. 연결과 기본 모델은 기기에 저장되고 재시작 후에도 유지됩니다.
 
-**OpenAI Chat Completions 호환 API**를 지원합니다. `/chat/completions`는 필수이고 `/models`는 선택 사항입니다. 다른 프로토콜만 제공하는 서비스는 이 입력란에서 직접 사용할 수 없습니다. 루트 URL에는 `/v1`을 추가하고 사용자 지정 경로는 유지합니다.
+**OpenAI Chat Completions**와 **Anthropic Messages**를 지원합니다. 상위 서비스에 맞는 프로토콜을 선택하세요. `/models`는 선택 사항입니다. OpenAI 루트에는 `/v1`을 추가하며 Anthropic은 루트, `/v1`, 전체 Messages URL을 지원합니다. 사용자 지정 경로는 유지합니다.
 
 요청은 설정한 서비스로 전송되며 기능, 한도, 요금은 해당 서비스와 모델에 따라 다릅니다. 기존 공식 API 및 OKINTO 연결도 유지합니다. 개별 모델 설정이 있는 봇과 대화는 따로 전환하세요.
 

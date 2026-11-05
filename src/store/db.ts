@@ -913,15 +913,15 @@ export class Store {
    * 群的时间线：用户在群里说的话（和系统提示）+ 各成员在这个群的会话里的回复，按消息 id 排（id 全局递增）。
    * 成员会话里的 user 消息是发给代理的输入，不算。botId：回复的机器人；用户的话是空串。afterId：只要这之后的。
    */
-  listGroupMessages(groupId: string, limit = 200, afterId = 0): Array<Message & { botId: string }> {
+  listGroupMessages(groupId: string, limit = 200, afterId = 0, beforeId = Number.MAX_SAFE_INTEGER): Array<Message & { botId: string }> {
     const convs = this.groupConversations(groupId);
     const botOf = new Map(convs.map((c) => [c.id, c.botId]));
     const replies = convs.length ? ` OR (conversation_id IN (${convs.map(() => "?").join(", ")}) AND role = 'assistant')` : "";
     const rows = this.db
       .prepare(
-        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps FROM messages WHERE id > ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
+        `SELECT * FROM (SELECT id, conversation_id, role, content, created_at, interim, files, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps FROM messages WHERE id > ? AND id < ? AND (conversation_id = ?${replies}) ORDER BY id DESC LIMIT ?) ORDER BY id`,
       )
-      .all(afterId, groupPeer(groupId), ...convs.map((c) => c.id), limit) as Row[];
+      .all(afterId, beforeId, groupPeer(groupId), ...convs.map((c) => c.id), limit) as Row[];
     return rows.map((r) => ({ ...this.toMessage(r), botId: botOf.get(String(r.conversation_id)) ?? "" }));
   }
 
@@ -944,6 +944,10 @@ export class Store {
   getMessage(id: number): Message | undefined {
     const r = this.db.prepare("SELECT id, conversation_id, role, content, created_at FROM messages WHERE id = ?").get(id) as Row | undefined;
     return r ? { id: Number(r.id), conversationId: String(r.conversation_id), role: String(r.role) as Message["role"], content: String(r.content), createdAt: Number(r.created_at) } : undefined;
+  }
+  getMessageDetails(id: number): Message | undefined {
+    const row = this.db.prepare("SELECT *, CASE WHEN json_valid(activity) THEN json_array_length(activity) ELSE 0 END AS steps FROM messages WHERE id = ?").get(id) as Row | undefined;
+    return row ? this.toMessage(row) : undefined;
   }
   listMessages(conversationId: string, limit = 500): Message[] {
     const rows = this.db

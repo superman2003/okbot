@@ -39,6 +39,8 @@ export const CHAT_RULES = [
   "- 在微信、飞书里回复要短，通常几句话；长内容写成文件交付，聊天里只给结论。微信只显示纯文本，不要用表格和标题。",
 ].join("\n");
 
+export const HISTORY_GUIDE = "# 聊天历史与成果\n用户提到群聊或其他成员生成的文件时，先用 chat_history 查找。成果用 artifactId 引用；用户让你发到自己的微信时，用 send_to_weixin。pending/held 是待投递，sent 才表示微信接口已接收。";
+
 /** 长期记忆的用法（只在本机器人开着长期记忆时放进系统提示词；快照在每段对话的第一条消息里） */
 export const MEMORY_GUIDE = [
   "# 长期记忆",
@@ -90,5 +92,5 @@ export function botIdentity(name: string, persona: string): string {
  * 顺序按变化频率从低到高：聊天规则（随应用升级）→ 记忆说明（随开关）→ 其他机器人（增删或改名时）→ 名字与人设（用户随时改）。
  */
 export function botPrompt(o: BotPromptInput): string {
-  return [CHAT_RULES, o.memory ? MEMORY_GUIDE : "", botTeam(o.others ?? []), botIdentity(o.name, o.persona)].filter(Boolean).join("\n\n");
+  return [CHAT_RULES, HISTORY_GUIDE, o.memory ? MEMORY_GUIDE : "", botTeam(o.others ?? []), botIdentity(o.name, o.persona)].filter(Boolean).join("\n\n");
 }

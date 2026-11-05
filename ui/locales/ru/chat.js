@@ -59,6 +59,11 @@ export default {
     submit: "Отправить",
   },
   file: {
+    "forwardWechat": "Отправить в мой WeChat",
+    "forwardSent": "WeChat принял файл",
+    "forwardQueued": "Файл в очереди на отправку в WeChat",
+    "chooseWechat": "Выберите свой аккаунт WeChat",
+
     open: "Открыть {name}",
     reveal: "Показать в папке",
     gone: "Файл не найден",

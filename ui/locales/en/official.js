@@ -5,7 +5,7 @@ export default {
     "title": "Custom upstream",
     "summary": "Set your own API URL and Key, fetch models and choose a default",
     "configure": "Configure",
-    "note": "Connect any OpenAI-compatible Chat Completions service. Credentials stay on this device.",
+    "note": "Connect an OpenAI- or Anthropic-compatible relay, official API or local service. Keys stay on this device.",
     "url": "API Base URL",
     "keepKey": "Leave blank to keep saved key ••••{tail}",
     "discover": "Fetch upstream models",
@@ -18,7 +18,11 @@ export default {
     "testOk": "The selected model replied successfully.",
     "found": "Fetched {count} models. Choose a chat model, then test it.",
     "save": "Save and use this model",
-    "remove": "Disconnect custom upstream"
+    "remove": "Disconnect custom upstream",
+    "protocol": "API protocol",
+    "openaiNote": "Uses Chat Completions (/chat/completions) with a Bearer API key.",
+    "anthropicNote": "Uses Anthropic Messages (/v1/messages) with x-api-key or Bearer authentication. Enter a root URL, /v1 or full /v1/messages URL. Model IDs can be entered manually.",
+    "authMode": "Anthropic authentication"
 },
   "useOwn": "Use your own API key",
   "choose": "Choose a provider",

@@ -12,6 +12,8 @@
  */
 import { groupPeer, type BotGroup, type Store } from "../store/db.js";
 import { t as tr } from "../i18n/index.js";
+import { artifactId } from "./history.js";
+import path from "node:path";
 
 /** 一条用户消息最多接力几次（用户 @ 的不算） */
 export const MAX_RELAYS = 6;
@@ -194,7 +196,8 @@ export class GroupChats {
     if (list.length) store.setKV(seenKey(g.id, botId), String(list.at(-1)!.id));
     const lines = list
       .filter((m) => m.role !== "system" && m.botId !== botId && !m.content.startsWith("⚠️"))
-      .map((m) => ({ who: m.role === "user" ? USER_LABEL : name(m.botId), text: m.content }));
+      .map((m) => ({ who: m.role === "user" ? USER_LABEL : name(m.botId), text: [...(m.files || []).map((f, index) => `[群聊成果 ${artifactId(m.id, index)}] ${path.basename(f)}`),
+        ...(m.interim || []).filter((s, i, a) => !(i === a.length - 1 && s === m.content)), m.content].filter(Boolean).join("\n\n") }));
     return groupInput({ group: g.name, me: name(botId), others: members.filter((m) => m.id !== botId).map((m) => m.name), lines });
   }
 

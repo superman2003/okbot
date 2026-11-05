@@ -790,6 +790,8 @@ export class AgentHost {
       ...(this.allows("network") ? ["    - id: amb-web-search", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-web-search.mjs"))}`] : []),
       // 已授权账号（Notion、飞书）：有账号才注册工具（AMB_CONNECTIONS），令牌只在宿主这边（accounts.ts）
       ...(this.allows("accounts") ? ["    - id: amb-connections", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-connections.mjs"))}`] : []),
+      "    - id: amb-chat-history",
+      `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-chat-history.mjs"))}`,
       // 目录 Bot：没声明的权限一律拒绝，声明了的第一次用时问用户（amb-bot-gate.mjs）
       ...(this.o.store.getBot(this.o.botId)?.app ? ["    - id: amb-bot-gate", `      name: ${yamlStr(path.join(this.o.runtimeDir, "plugins", "amb-bot-gate.mjs"))}`] : []),
       // sdk 配置默认不带这两个工具：ask_user_question 走 user-questions → 插件 → 审批中心；
@@ -1127,10 +1129,13 @@ exec "$REAL" "$@"
     return { model, provider: "magpie", api: "openai-completions", limits: modelLimits(model) };
   }
 
-  /**
-   * 模型的路线：按 OKINTO 模型资料选接口（agentApi）、定上下文窗口；在该接口上被拒过（24 小时内）就走 Chat。
-   * 模型资料在一个子进程的生命期内只查一次（和以前一样：接口在拉起进程时选定）。
-   */
+  /** Invalidate cached metadata when an upstream changes protocol; active turns keep their route. */
+  invalidateModelRoutes(prefix: string): void {
+    for (const model of this.routes.keys()) if (model.startsWith(prefix)) this.routes.delete(model);
+    this.fallbacks.clearPrefix(prefix);
+  }
+
+  /** Cached model API and context limits; shape failures temporarily fall back to Chat. */
   async routeFor(model: string): Promise<ModelRoute> {
     let p = this.routes.get(model);
     if (!p) {

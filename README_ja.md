@@ -1,14 +1,18 @@
 # okbot
 
+**群チャットの成果：** `chat_history` で共有ファイルを検索し、`send_to_weixin` または添付のボタンで自分の WeChat に転送できます。既存のファイルを再利用し、削除済み・送信待ちを明示します。
+
+**Anthropic 対応：** 接続のプロトコルで Anthropic Messages を選べます。ルート、`/v1` または完全な `/v1/messages` URL を入力してください。一覧取得、テスト、エージェントの会話は選択したプロトコルを使用します。モデル ID の直接入力も利用できます。
+
 自分の API URL とキーで、選んだモデルサービスに接続するパーソナル AI アシスタント。
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows 版](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [問題報告](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
+[Windows 版](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1) · [問題報告](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
 
 ## 📥 ダウンロード
 
-現在のリリースは **Windows x64 インストーラー** [okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe)（約160 MB）を提供します。[リリースページ](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1)に `SHA256SUMS` もあります。
+現在のリリースは **Windows x64 インストーラー** [okbot-0.1.28-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.28-1/okbot-0.1.28-win-x64.exe)（約160 MB）を提供します。[リリースページ](https://github.com/superman2003/okbot/releases/tag/custom-0.1.28-1)に `SHA256SUMS` もあります。
 
 Electron、magpie、DeepSeek Harness、Cua Driver を同梱します。Node.js と Go の別途インストールは不要です。このビルドは未署名です。ウィンドウを閉じるとトレイに格納され、トレイから終了できます。他の OS はソースビルドを参照してください。
 
@@ -20,7 +24,7 @@ Electron、magpie、DeepSeek Harness、Cua Driver を同梱します。Node.js �
 4. モデルをテストします。短いリクエストを送信し、通常の API 料金が発生する場合があります。
 5. 保存して使用します。接続と既定モデルは端末に保存され、再起動後も使えます。
 
-**OpenAI Chat Completions 互換 API** に対応します。`/chat/completions` は必須で、`/models` は任意です。他のプロトコルだけを提供するサービスは直接使えません。ルート URL には `/v1` を補い、カスタムパスは保持します。
+**OpenAI Chat Completions** と **Anthropic Messages** に対応します。上流に合ったプロトコルを選んでください。`/models` は任意です。OpenAI のルートには `/v1` を補い、Anthropic はルート・`/v1`・Messages URL に対応します。カスタムパスは保持します。
 
 リクエストは設定したサービスに送信されます。料金、制限、機能はサービスとモデルに依存します。既存の公式 API・OKINTO 接続も保持しています。個別のモデル設定があるボットや会話は別途切り替えてください。
 

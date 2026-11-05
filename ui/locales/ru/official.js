@@ -5,7 +5,7 @@ export default {
     "title": "Свой API-сервер",
     "summary": "Укажите URL и ключ API, загрузите список моделей и выберите модель по умолчанию",
     "configure": "Настроить",
-    "note": "Подключение к сервису, совместимому с OpenAI Chat Completions. Ключ хранится только на этом устройстве.",
+    "note": "Подключение к совместимому с OpenAI или Anthropic сервису, официальному API или локальной модели. Ключ хранится на устройстве.",
     "url": "Базовый URL API",
     "keepKey": "Оставьте пустым, чтобы использовать сохранённый ключ ••••{tail}",
     "discover": "Загрузить модели сервера",
@@ -18,7 +18,11 @@ export default {
     "testOk": "Выбранная модель успешно ответила.",
     "found": "Получено моделей: {count}. Выберите модель для чата и проверьте её.",
     "save": "Сохранить и использовать модель",
-    "remove": "Отключить свой API-сервер"
+    "remove": "Отключить свой API-сервер",
+    "protocol": "Протокол API",
+    "openaiNote": "Chat Completions (/chat/completions) с ключом Bearer.",
+    "anthropicNote": "Anthropic Messages (/v1/messages) с x-api-key или Bearer. Поддерживаются корень, /v1, полный URL Messages и ручной ввод ID модели.",
+    "authMode": "Авторизация Anthropic"
 },
   "useOwn": "Использовать свой API-ключ",
   "choose": "Выберите сервис",

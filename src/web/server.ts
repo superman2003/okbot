@@ -24,6 +24,7 @@ import { botWorkspace, describeFile, resolveFile, runnable, sendFile } from "./f
 import { connectionFromPids } from "../agent/peer-guard.js";
 import { groupPeer, type ApprovalRow, type BotGroup, type Conversation, type Message, type Store } from "../store/db.js";
 import { GroupChats } from "../core/groups.js";
+import { artifactId } from "../core/history.js";
 import { defaultLine } from "../agent/approvals.js";
 import { normalizeSettings } from "../agent/settings.js";
 import { SEARCH_PROVIDERS, normalizeSearxUrl, type SearchProvider } from "../agent/search.js";
@@ -1144,6 +1145,17 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
       const groupId = decodeURIComponent(seg[1] ?? "");
       const group = app.store.getGroup(groupId);
       if (!group) throw new HttpError(404, t("web.groupNotFound"));
+      if (seg.length === 3 && seg[2] === "forward" && m === "POST") {
+        const b = await readJson(req);
+        const messageId = Number(b.messageId), fileIndex = Number(b.fileIndex);
+        if (!Number.isSafeInteger(messageId) || !Number.isSafeInteger(fileIndex) || messageId < 1 || fileIndex < 0) throw new HttpError(400, t("web.fileNotFound"));
+        const message = app.store.getMessageDetails(messageId);
+        const source = message && app.store.getConversation(message.conversationId);
+        if (!source || source.channel !== "web" || source.peerId !== groupPeer(groupId) || message?.role !== "assistant") throw new HttpError(404, t("web.fileNotFound"));
+        try {
+          return send(res, 200, await app.history.send(source.botId, source.id, { artifactIds: [artifactId(messageId, fileIndex)], account: typeof b.account === "string" ? b.account : undefined }));
+        } catch (e) { throw new HttpError(400, (e as Error).message); }
+      }
       if (seg.length === 2) {
         if (m === "GET") {
           // 正在答的那一轮由 live 显示；它开始之后存下的回复先不列，免得重复

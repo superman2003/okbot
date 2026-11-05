@@ -7,7 +7,7 @@ import { Markdown, Linkified } from "../components/markdown.js";
 import { upsertStep } from "../components/activity.js";
 import { DeliveredFiles } from "../components/files.js";
 import { api, attachGroup } from "../lib/api.js";
-import { failed, saved, useStore } from "../lib/store.js";
+import { failed, saved, toast, useStore } from "../lib/store.js";
 import { fmtSep } from "../lib/format.js";
 import { prefs } from "../lib/prefs.js";
 import { t, useLang } from "../lib/i18n.js";
@@ -96,6 +96,8 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const [canOpen, setCanOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [forward, setForward] = useState(null);
+  const [forwarding, setForwarding] = useState(false);
   const [loadErr, setLoadErr] = useState("");
   const [text, setText] = useState("");
   const [atBottom, setAtBottom] = useState(true);
@@ -296,7 +298,23 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
   const onMedia = () => {
     if (stick.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
   };
-  const files = (it) => html`<${DeliveredFiles} files=${it.files} conv=${it.conv} canOpen=${canOpen} onLoad=${onMedia} />`;
+  const sendForward = async (it, index, account) => {
+    setForwarding(true);
+    try {
+      const r = await api(`/groups/${encodeURIComponent(group.id)}/forward`, { method: "POST", body: { messageId: it.mid, fileIndex: index, account } });
+      const failedFile = r.files?.find((f) => f.status === "failed" || f.status === "gone");
+      if (failedFile) throw new Error(failedFile.error || r.note);
+      toast(t(r.files?.every((f) => f.status === "sent") ? "chat.file.forwardSent" : "chat.file.forwardQueued"));
+      setForward(null);
+    } finally { setForwarding(false); }
+  };
+  const forwardFile = async (it, index) => {
+    const r = await api("/channel-accounts");
+    const accounts = (r.accounts || []).filter((a) => a.channel === "weixin" && a.enabled);
+    if (accounts.length <= 1) return sendForward(it, index, accounts[0]?.key);
+    setForward({ it, index, accounts });
+  };
+  const files = (it) => html`<${DeliveredFiles} files=${it.files} conv=${it.conv} canOpen=${canOpen} onLoad=${onMedia} onForward=${it.mid ? (index) => forwardFile(it, index) : undefined} />`;
   const rows = useMemo(() => {
     const out = [];
     let prev = null;
@@ -383,6 +401,9 @@ export function GroupScreen({ group, bots, onEdit, onOpenSettings, onChanged }) 
           ${o.bot ? html`<${BotAvatar} bot=${o.bot} size=${20} />` : null}<span class="v">${o.name}</span>
         </li>`)}
       </ul>
+    <//>`}
+    ${forward && html`<${Sheet} title=${t("chat.file.chooseWechat")} onClose=${() => !forwarding && setForward(null)}>
+      <div class="list">${forward.accounts.map((a) => html`<button type="button" class="btn block" disabled=${forwarding} onClick=${() => sendForward(forward.it, forward.index, a.key).catch(failed)}>${a.label || a.key}</button>`)}</div>
     <//>`}
   </section>`;
 }

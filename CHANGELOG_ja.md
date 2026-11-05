@@ -4,6 +4,17 @@
 
 アプリを使っていて気付く変更をまとめています。以前のバージョンは [GitHub Releases](https://github.com/modelflare-ai/AnyModelBot/releases) をご覧ください。
 
+## 0.1.28 - 2026-11-05
+
+### 追加
+
+- カスタム接続で OpenAI Chat Completions または Anthropic Messages を選べます。
+- Anthropic の一覧取得は x-api-key または Bearer 認証・バージョンヘッダー・ページ分割に対応し、テストと会話は /v1/messages を使います。
+- ルート、/v1、完全な Messages URL に対応し、カスタムパスを保持します。
+- 切り替え時に古い接続設定と経路キャッシュを消去します。既存の OpenAI 設定は引き続き使えます。
+- 会話履歴の検索と群チャットの成果参照を追加し、ほかのメンバーが作成したファイルを探せます。
+- ツールまたは群の添付ボタンから自分の WeChat に転送でき、送信待ちと失敗を正確に表示します。
+
 ## 0.1.27 - 2026-11-05
 
 ### 修正

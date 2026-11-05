@@ -6,6 +6,8 @@ import { t } from "../lib/i18n.js";
 /** Discovering/testing never writes credentials. Saving is an explicit separate action. */
 export function UpstreamForm({ onConnected, onBack }) {
   const [baseUrl, setUrl] = useState("");
+  const [protocol, setProtocol] = useState("openai");
+  const [authMode, setAuthMode] = useState("bearer");
   const [key, setKey] = useState("");
   const [model, setModel] = useState("");
   const [models, setModels] = useState([]);
@@ -17,7 +19,7 @@ export function UpstreamForm({ onConnected, onBack }) {
     let alive = true;
     api("/upstream").then((r) => {
       if (!alive) return;
-      setSaved(r); setUrl(r.baseUrl); setModel(r.model); setModels(r.models);
+      setSaved(r); setUrl(r.baseUrl); setProtocol(r.protocol || "openai"); setAuthMode(r.authMode || (r.protocol === "anthropic" ? "api-key" : "bearer")); setModel(r.model); setModels(r.models);
     }).catch((e) => alive && setError(e.message)).finally(() => alive && setBusy(""));
     return () => { alive = false; };
   }, []);
@@ -26,7 +28,7 @@ export function UpstreamForm({ onConnected, onBack }) {
     if (busy) return;
     setBusy(kind); changed();
     try {
-      const body = { baseUrl: baseUrl.trim(), key: key.trim(), model: model.trim(), models };
+      const body = { baseUrl: baseUrl.trim(), key: key.trim(), protocol, authMode, model: model.trim(), models };
       if (kind === "discover") {
         const r = await api("/upstream/models", { method: "POST", body });
         setModels(r.models);
@@ -50,14 +52,23 @@ export function UpstreamForm({ onConnected, onBack }) {
   const canKey = !!key.trim() || (saved?.connected && baseUrl.trim() === saved.baseUrl);
   return html`<form class="list upstream-form" onSubmit=${(e) => { e.preventDefault(); action("save"); }}>
     <p class="hint">${t("official.custom.note")}</p>
+    <label class="k" for="upstream-protocol">${t("official.custom.protocol")}</label>
+    <select id="upstream-protocol" class="field" value=${protocol} disabled=${!!busy} onChange=${(e) => { setProtocol(e.target.value); setAuthMode(e.target.value === "anthropic" ? "api-key" : "bearer"); setModels([]); setModel(""); changed(); }}>
+      <option value="openai">OpenAI Chat Completions</option><option value="anthropic">Anthropic Messages</option>
+    </select>
+    <p class="hint">${t(protocol === "anthropic" ? "official.custom.anthropicNote" : "official.custom.openaiNote")}</p>
+    ${protocol === "anthropic" && html`<label class="k" for="upstream-auth">${t("official.custom.authMode")}</label>
+      <select id="upstream-auth" class="field" disabled=${!!busy} value=${authMode} onChange=${(e) => { setAuthMode(e.target.value); setModels([]); changed(); }}>
+        <option value="api-key">x-api-key</option><option value="bearer">Authorization: Bearer</option>
+      </select>`}
     <label class="k" for="upstream-url">${t("official.custom.url")}</label>
-    <input id="upstream-url" class="field mono" type="url" placeholder="https://your-api.example/v1" required value=${baseUrl} disabled=${!!busy}
+    <input id="upstream-url" class="field mono" type="url" placeholder=${protocol === "anthropic" ? "https://your-api.example" : "https://your-api.example/v1"} required value=${baseUrl} disabled=${!!busy}
       onInput=${(e) => { setUrl(e.target.value); setModels([]); setModel(""); changed(); }} />
     <label class="k" for="upstream-key">API Key</label>
     <input id="upstream-key" class="field mono" type="password" autocomplete="off" spellcheck="false" value=${key} disabled=${!!busy}
       placeholder=${saved?.connected ? t("official.custom.keepKey", { tail: saved.keyTail }) : "sk-…"}
       onInput=${(e) => { setKey(e.target.value); setModels([]); changed(); }} />
-    <button type="button" class="btn block" disabled=${!!busy || !baseUrl.trim() || !canKey} onClick=${() => action("discover")}>
+    <button type="button" class="btn block" data-upstream-action="discover" disabled=${!!busy || !baseUrl.trim() || !canKey} onClick=${() => action("discover")}>
       ${busy === "discover" && html`<${Spinner} />`}${t("official.custom.discover")}
     </button>
     <label class="k" for="upstream-model">${t("official.custom.model")}</label>
@@ -69,13 +80,13 @@ export function UpstreamForm({ onConnected, onBack }) {
     <input id="upstream-model" class="field mono" value=${model} placeholder=${t("official.custom.manual")} required disabled=${!!busy}
       onInput=${(e) => { setModel(e.target.value); changed(); }} />
     <p class="hint">${t("official.custom.modelNote")}</p>
-    <button type="button" class="btn block" disabled=${!!busy || !model.trim() || !canKey || !baseUrl.trim()} onClick=${() => action("test")}>
+    <button type="button" class="btn block" data-upstream-action="test" disabled=${!!busy || !model.trim() || !canKey || !baseUrl.trim()} onClick=${() => action("test")}>
       ${busy === "test" && html`<${Spinner} />`}${t("official.custom.test")}
     </button>
     <p class="hint">${t("official.custom.testNote")}</p>
     ${error && html`<div class="err-text" role="alert">${error}</div>`}
-    ${message && html`<p class="hint" role="status">${message}</p>`}
-    <button type="submit" class="btn primary lg block" disabled=${!!busy || !model.trim() || !canKey || !baseUrl.trim()}>
+    ${message && html`<p class="hint" role="status" data-upstream-result>${message}</p>`}
+    <button type="submit" class="btn primary lg block" data-upstream-action="save" disabled=${!!busy || !model.trim() || !canKey || !baseUrl.trim()}>
       ${busy === "save" && html`<${Spinner} />`}${t("official.custom.save")}
     </button>
     ${saved?.connected && html`<button type="button" class="text danger" disabled=${!!busy} onClick=${() => action("remove")}>${t("official.custom.remove")}</button>`}

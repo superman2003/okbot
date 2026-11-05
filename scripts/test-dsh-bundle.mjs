@@ -34,8 +34,8 @@ try {
   if (probe.status !== 0) throw new Error(`Electron cannot read ${env.AMB_DSH_RUNTIME}`);
   const vitest = path.join(root, "node_modules", "vitest", "vitest.mjs");
   // The sandbox suite requires Linux/bwrap. Windows uses the real-DSH multi-API suite.
-  const testFile = process.platform === "win32" ? "test/official-agent.integration.test.ts" : "test/agent.integration.test.ts";
-  const r = spawnSync(electron, [vitest, "run", testFile, ...process.argv.slice(3)], { cwd: root, env, stdio: "inherit" });
+  const testFiles = process.platform === "win32" ? ["test/official-agent.integration.test.ts", "test/history-agent.integration.test.ts"] : ["test/agent.integration.test.ts", "test/history-agent.integration.test.ts"];
+  const r = spawnSync(electron, [vitest, "run", ...testFiles, ...process.argv.slice(3)], { cwd: root, env, stdio: "inherit" });
   status = r.status ?? 1;
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
