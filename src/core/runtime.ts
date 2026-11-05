@@ -216,6 +216,16 @@ export class BotRuntime {
     else this.repliers.delete(`${account}:${channel}`);
   }
 
+  /** Reuse the original channel's reply path when the desktop continues that conversation. */
+  conversationReply(conv: Conversation, key: string): ReturnType<Replier> {
+    return (this.repliers.get(`${conv.account || conv.botId}:${conv.channel}`) ?? this.repliers.get(`*:${conv.channel}`))?.(conv, this.replyHandle(conv.id), key);
+  }
+
+  replyHandle(conversationId: string): Record<string, string> {
+    try { return JSON.parse(this.opts.store.getKV(REPLY_TO + conversationId) || "{}") ?? {}; }
+    catch { return {}; }
+  }
+
   /** 应用退出前调用（App.stop）：之后失败的回合留下重启标记，由下次启动告诉用户 */
   shutdown(): void {
     this.closing = true;
@@ -779,13 +789,7 @@ export class BotRuntime {
     // 那一轮已经有人跟着、或者随代理进程一起没了：不发任何东西
     const wakeId = agent?.available ? agent.host(botId).wakeId(convId) : undefined;
     if (this.closing || !agent || !conv || !bot || !wakeId) return;
-    let handle: Record<string, string> | undefined;
-    try {
-      handle = JSON.parse(store.getKV(REPLY_TO + convId) || "null") ?? undefined;
-    } catch {
-      handle = undefined;
-    }
-    const r = (this.repliers.get(`${conv.account || botId}:${conv.channel}`) ?? this.repliers.get(`*:${conv.channel}`))?.(conv, handle, `wake:${wakeId}`);
+    const r = this.conversationReply(conv, `wake:${wakeId}`);
     if (!r) log.warn("no way to reply in this conversation; the wake-up reply is only kept in its history", { bot: botId, conversationId: convId, channel: conv.channel });
     const out: ReplySession = r?.out ?? { apply: async () => undefined };
     const fl: Inflight = { botId, since: Date.now(), abort: new AbortController(), userStored: true };

@@ -1379,6 +1379,11 @@ export class Store {
   waitingOutbox(conversationId: string): OutboxRow[] {
     return (this.db.prepare("SELECT * FROM outbox WHERE conversation_id = ? AND status IN ('held', 'scheduled') ORDER BY seq").all(conversationId) as Row[]).map((r) => this.toOutbox(r));
   }
+
+  pendingChannelMessages(conversationId: string): number {
+    const row = this.db.prepare("SELECT COUNT(*) AS n FROM outbox WHERE conversation_id = ? AND status IN ('pending', 'held', 'scheduled')").get(conversationId) as Row;
+    return Number(row.n);
+  }
   /** 排着的主动消息里到时间了的，按写入顺序 */
   dueScheduledOutbox(now: number): OutboxRow[] {
     return (this.db.prepare("SELECT * FROM outbox WHERE status = 'scheduled' AND due <= ? ORDER BY seq").all(now) as Row[]).map((r) => this.toOutbox(r));

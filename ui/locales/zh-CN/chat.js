@@ -1,6 +1,14 @@
 // chat · zh-CN（screens/chat.js：对话页、输入框、审批 / 提问卡片）
 export default {
   sync: {
+    "twoWay": "与微信共用当前会话；电脑端消息和机器人回复都会同步到微信。",
+    "placeholder": "在这里继续微信会话，Enter 发送",
+    "sharedContext": "微信 · 双向同步",
+    "waitingSync": "微信发送窗口或额度受限，待发消息会排队。可继续在电脑聊天；在微信发一条消息后恢复同步。",
+    "connectToSend": "微信会话当前未连接或无权发送。请重新连接微信；历史记录仍可查看。",
+    "accepted": "消息已发送，正在处理…",
+    "sendFailed": "发送未完成，请检查连接后重试",
+
     "choose": "切换聊天会话",
     "local": "应用内聊天",
     "channel": "渠道",

@@ -4,6 +4,14 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.27 - 2026-11-05
+
+### Fixed
+
+- Restore a composer for WeChat conversations on desktop, sharing the same conversation context.
+- Forward desktop input to WeChat as a labelled bot message and deliver bot replies to both views.
+- Deduplicate submissions and show queued delivery. Desktop chat continues when WeChat delivery is limited; a new phone message resumes queued delivery.
+
 ## 0.1.26 - 2026-11-05
 
 ### Added

@@ -22,7 +22,7 @@ import { SseReply } from "./sse-reply.js";
 import { LiveTurns, type LiveTurn } from "./live.js";
 import { botWorkspace, describeFile, resolveFile, runnable, sendFile } from "./files.js";
 import { connectionFromPids } from "../agent/peer-guard.js";
-import { groupPeer, type ApprovalRow, type BotGroup, type Message, type Store } from "../store/db.js";
+import { groupPeer, type ApprovalRow, type BotGroup, type Conversation, type Message, type Store } from "../store/db.js";
 import { GroupChats } from "../core/groups.js";
 import { defaultLine } from "../agent/approvals.js";
 import { normalizeSettings } from "../agent/settings.js";
@@ -236,6 +236,23 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
 
   // —— 网页控制台进行中的消息：切走再切回、刷新后能接上，停止按钮不依赖发消息的那个请求 ——
   const live = new LiveTurns();
+  const desktopRequests = new Set<string>();
+  function channelEvent(conv: Conversation, text: string, requestId: string): InboundEvent {
+    return {
+      id: `desktop:${requestId}`, botId: conv.botId, channel: "weixin", account: conv.account || conv.botId,
+      conversation: { id: conv.peerId, kind: "dm" }, sender: { id: conv.peerId },
+      parts: [{ type: "text", text }], replyHandle: app.runtime.replyHandle(conv.id), receivedAt: Date.now(),
+    };
+  }
+  function channelComposer(conv: Conversation) {
+    const account = conv.account || conv.botId;
+    const wx = app.channels.get(account)?.weixin;
+    const connected = !!wx?.running && !["expired", "disabled", "login_required"].includes(wx.status.state);
+    const canSend = conv.channel === "weixin" && conv.kind === "dm" && connected && !!app.store.getChannelAccount(account, "weixin")?.enabled
+      && app.access.allowed(channelEvent(conv, "", "check"));
+    return { canSend, syncReady: !!wx?.quota.open(conv.peerId) && wx.quota.remaining(conv.peerId) - wx.quota.reserved(conv.peerId) >= 2,
+      pendingSync: app.store.pendingChannelMessages(conv.id) };
+  }
   function startLive(botId: string, text: string): LiveTurn {
     const convId = consoleConvId(botId);
     const last = app.store.getConversation(convId) ? (app.store.listMessages(convId, 1).at(-1)?.id ?? 0) : 0;
@@ -1185,6 +1202,66 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     }
     if (seg[0] === "conversations") {
       if (seg.length === 1 && m === "GET") return send(res, 200, { conversations: app.store.listConversations(url.searchParams.get("bot") || undefined) });
+      if (seg.length === 3 && seg[2] === "messages" && m === "POST") {
+        const conv = app.store.getConversation(decodeURIComponent(seg[1]));
+        if (!conv) throw new HttpError(404, t("web.conversationNotFound"));
+        const b = await readJson(req);
+        const text = typeof b.text === "string" ? b.text.trim() : "";
+        const requestId = typeof b.requestId === "string" ? b.requestId : "";
+        if (!text) throw new HttpError(400, t("web.emptyText"));
+        if (text.length > 24000 || !/^[A-Za-z0-9_-]{16,80}$/.test(requestId)) throw new HttpError(400, t("web.channelBadMessage"));
+        if (!channelComposer(conv).canSend) throw new HttpError(409, t("web.channelNotConnected"));
+        const dedupKey = `desktop-chat:${conv.id}:${requestId}`;
+        const hash = crypto.createHash("sha256").update(text).digest("hex");
+        const saved = app.store.getKV(dedupKey);
+        if (saved) {
+          const previous = JSON.parse(saved) as { hash: string; state: string; reply?: string };
+          if (previous.hash !== hash) throw new HttpError(409, t("web.channelRequestConflict"));
+          if (previous.state === "accepted" && !desktopRequests.has(dedupKey)) previous.state = "failed";
+          return send(res, 202, { accepted: true, duplicate: true, requestId, reply: previous.reply, state: previous.state });
+        }
+        const reply = app.runtime.conversationReply(conv, `desktop:${requestId}`);
+        if (!reply) throw new HttpError(409, t("web.channelNotConnected"));
+        const ev = channelEvent(conv, text, requestId);
+        if (text.toLowerCase() === "/stop") live.stop(conv.id);
+        const intercepted = app.runtime.interceptReply(ev);
+        const save = (state: string, message?: string) => app.store.setKV(dedupKey, JSON.stringify({ hash, state, reply: message, at: Date.now() }));
+        save("accepted", intercepted.ack);
+        // Keep retry keys for a week, without recording input or credentials in the dedup record.
+        for (const [key, value] of app.store.listKV("desktop-chat:")) {
+          try { if (JSON.parse(value).at < Date.now() - 7 * 86400_000 && !desktopRequests.has(key)) app.store.deleteKV(key); } catch { /* old record */ }
+        }
+        const turn = live.start(conv.id, conv.botId, text, app.store.listMessages(conv.id, 1).at(-1)?.id ?? 0);
+        desktopRequests.add(dedupKey);
+        const out: ReplySession = { apply: async (op) => { await turn.apply(op); await reply.out.apply(op); } };
+        const run = async () => {
+          try {
+            if (!channelComposer(conv).canSend) throw new Error(t("web.channelNotConnected"));
+            if (intercepted.handled) {
+              // Approval/secret answers are handled by the runtime and are never echoed as raw text.
+              if (intercepted.ack) await out.apply({ type: "text", text: intercepted.ack, ack: true });
+            } else {
+              if (turn.abort.signal.aborted) { save("stopped"); return; }
+              await reply.out.apply({ type: "text", text: t("web.desktopEcho", { text }) });
+              if (intercepted.ack) await out.apply({ type: "text", text: intercepted.ack, ack: true });
+              await app.runtime.handle(ev, out, { signal: turn.abort.signal });
+            }
+            save("done", intercepted.ack);
+          } catch (e) {
+            save("failed");
+            log.warn("desktop channel message failed", { conversationId: conv.id, message: (e as Error).message });
+            app.store.addMessage(conv.id, "assistant", `⚠️ ${t("web.channelSendFailed")}`);
+          } finally {
+            desktopRequests.delete(dedupKey);
+            reply.done?.();
+            live.end(turn, "done", { conversationId: conv.id });
+          }
+        };
+        // Use the phone's queue as well, so simultaneous messages share ordering and context.
+        if (intercepted.handled) void run();
+        else void app.queue.run(`weixin:${ev.account}:${conv.peerId}`, run);
+        return send(res, 202, { accepted: true, requestId, reply: intercepted.ack });
+      }
       if (seg.length === 3 && seg[2] === "messages" && m === "GET") {
         const conv = app.store.getConversation(decodeURIComponent(seg[1]));
         if (!conv) throw new HttpError(404, t("web.conversationNotFound"));
@@ -1207,6 +1284,8 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
           pending: app.store.listApprovals({ status: "pending", conversationId: conv.id, limit: 50 }).map((r) => publicApproval(r, app.store)),
           turn: turn ? { since: turn.since, lastProgress: turn.lastProgress, steps: turn.activity.steps, interim: turn.interim } : null,
           busy: app.runtime.busySince(conv.id) !== undefined,
+          live: live.list(conv.id).map((turn) => ({ ...turn.snapshot(), afterMessageId: turn.afterMessageId })),
+          composer: channelComposer(conv),
           canOpen: !!app.desktop?.openPath,
         });
       }

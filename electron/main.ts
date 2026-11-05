@@ -269,6 +269,8 @@ async function smoke(out: string): Promise<void> {
     const wc = win!.webContents;
     const channelMode = process.env.AMB_ELECTRON_SMOKE_CHANNELS === "1";
     await new Promise<void>((r) => (wc.isLoading() ? wc.once("did-finish-load", () => r()) : r()));
+    // Exercise the same foreground polling and compositor behavior as the real desktop window.
+    win!.showInactive();
     // 未连接 OKINTO 时是引导页，已连接时是对话页；两者都带 data-screen
     let screen = "";
     for (let i = 0; i < 50; i++) {
@@ -293,7 +295,12 @@ async function smoke(out: string): Promise<void> {
       // A hidden test window skips visibility-based polling. Trigger the same focus refresh as the app.
       await wc.executeJavaScript("window.dispatchEvent(new Event('focus'))");
       await waitFor("document.body.innerText.includes('smoke-wechat-synced')");
-      await wc.executeJavaScript("document.querySelector('.channel-sync-note button').click()");
+      await waitFor("document.querySelector('[data-channel-composer] textarea') && !document.querySelector('[data-channel-composer] textarea').disabled");
+      await wc.executeJavaScript("(()=>{const ta=document.querySelector('[data-channel-composer] textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(ta,'smoke-desktop-send');ta.dispatchEvent(new Event('input',{bubbles:true}));})()");
+      await waitFor("!document.querySelector('[data-channel-composer] .send').disabled");
+      await wc.executeJavaScript("document.querySelector('[data-channel-composer] .send').click()");
+      await waitFor("document.body.innerText.includes('smoke-bot-reply:smoke-desktop-send')");
+      await wc.executeJavaScript("document.querySelector('.channel-compose-note button').click()");
       await waitFor("document.querySelector('[data-screen=chat]') && document.body.innerText.includes('smoke-local-only') && !document.body.innerText.includes('smoke-wechat-seed')");
       await wc.executeJavaScript("document.querySelector('.conversation-picker button').click()");
       await waitFor("[...document.querySelectorAll('[role=menuitem]')].some(e=>e.innerText.includes('Smoke WeChat'))");
@@ -306,7 +313,6 @@ async function smoke(out: string): Promise<void> {
     await wc.executeJavaScript("document.fonts.ready.then(() => true)");
     await new Promise((r) => setTimeout(r, 500));
     const customUpstreamForm = await wc.executeJavaScript("!!document.querySelector('#upstream-url') && !!document.querySelector('#upstream-key') && !!document.querySelector('#upstream-model')");
-    win!.showInactive();
     await new Promise((r) => setTimeout(r, 300));
     const img = await wc.capturePage();
     fs.writeFileSync(out, img.toPNG());

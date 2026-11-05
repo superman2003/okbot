@@ -1,5 +1,13 @@
 export default {
   sync: {
+    "twoWay": "WeChat과 같은 대화입니다. 데스크톱 메시지와 봇 응답을 WeChat에 전달합니다.",
+    "placeholder": "여기서 WeChat 대화 계속하기",
+    "sharedContext": "WeChat · 양방향 동기화",
+    "waitingSync": "WeChat 전송 시간이나 할당량을 기다리고 있습니다. 여기서 대화를 계속할 수 있습니다. WeChat에서 메시지를 보내면 동기화가 재개됩니다.",
+    "connectToSend": "WeChat이 연결되지 않았거나 전송 권한이 없습니다. 다시 연결하세요. 기록은 읽을 수 있습니다.",
+    "accepted": "메시지를 접수했습니다. 처리 중…",
+    "sendFailed": "전송을 완료하지 못했습니다. 연결을 확인하고 다시 시도하세요.",
+
     "choose": "대화 전환",
     "local": "앱 내 채팅",
     "channel": "채널",

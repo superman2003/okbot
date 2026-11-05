@@ -1,5 +1,11 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  channelBadMessage: "メッセージが長すぎるかリクエスト ID が無効です",
+  channelNotConnected: "WeChat に接続していないか権限がありません。再接続してから送信してください",
+  channelRequestConflict: "このリクエスト ID は別のメッセージに使用されています。再送信してください",
+  channelSendFailed: "デスクトップのメッセージを処理できませんでした。接続を確認して再試行してください",
+  desktopEcho: "💻 デスクトップからのメッセージ：\n{text}",
+
   "needJson": "application/json が必要です",
   "bodyTooLarge": "リクエスト本文が大きすぎます",
   "needToken": "アクセストークンが必要です。/?token=<token> を開いてください",

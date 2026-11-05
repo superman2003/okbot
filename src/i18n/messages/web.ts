@@ -2,6 +2,12 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
+  channelBadMessage: "消息过长或请求编号无效",
+  channelNotConnected: "此微信会话未连接或未获授权，请重新连接微信后发送",
+  channelRequestConflict: "请求编号已用于另一条消息，请重新发送",
+  channelSendFailed: "电脑端消息处理失败，请检查渠道连接后重试",
+  desktopEcho: "💻 电脑端消息：\n{text}",
+
   needJson: "需要 application/json",
   bodyTooLarge: "请求体过大",
   needToken: "需要访问令牌：打开 /?token=<令牌>",
@@ -56,6 +62,12 @@ export const zh = {
 } satisfies Catalog;
 
 export const en: Catalog<typeof zh> = {
+  channelBadMessage: "The message is too long or its request ID is invalid",
+  channelNotConnected: "This WeChat conversation is disconnected or unauthorized; reconnect before sending",
+  channelRequestConflict: "This request ID belongs to another message; send again",
+  channelSendFailed: "Could not process the desktop message; check the channel connection and retry",
+  desktopEcho: "💻 Message from desktop:\n{text}",
+
   needJson: "Expected application/json",
   bodyTooLarge: "Request body too large",
   needToken: "Access token required: open /?token=<token>",

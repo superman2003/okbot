@@ -1,6 +1,14 @@
 // chat · en
 export default {
   sync: {
+    "twoWay": "Shared WeChat conversation: desktop messages and bot replies are forwarded to WeChat.",
+    "placeholder": "Continue this WeChat conversation here",
+    "sharedContext": "WeChat · Two-way sync",
+    "waitingSync": "WeChat delivery is waiting for a valid window or quota. You can keep chatting here; send a message in WeChat to resume delivery.",
+    "connectToSend": "WeChat is disconnected or sending is unauthorized. Reconnect to send; history remains available.",
+    "accepted": "Message accepted, processing…",
+    "sendFailed": "Sending did not complete. Check the connection and retry.",
+
     "choose": "Switch conversation",
     "local": "In-app chat",
     "channel": "Channel",

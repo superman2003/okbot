@@ -1,5 +1,11 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
+  channelBadMessage: "Сообщение слишком длинное или ID запроса недействителен",
+  channelNotConnected: "Чат WeChat отключён или недоступен. Подключитесь заново перед отправкой",
+  channelRequestConflict: "Этот ID запроса уже использован для другого сообщения. Отправьте снова",
+  channelSendFailed: "Не удалось обработать сообщение с компьютера. Проверьте подключение и повторите",
+  desktopEcho: "💻 Сообщение с компьютера:\n{text}",
+
   needJson: "Ожидается application/json",
   bodyTooLarge: "Тело запроса слишком большое",
   needToken: "Нужен токен доступа: откройте /?token=<token>",

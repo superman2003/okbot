@@ -4,11 +4,11 @@ A personal AI assistant that connects to the model service you choose with your 
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows download](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) · [Issues](https://github.com/superman2003/okbot/issues) · [MIT license](./LICENSE)
+[Windows download](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [Issues](https://github.com/superman2003/okbot/issues) · [MIT license](./LICENSE)
 
 ## 📥 Download
 
-The current release provides a **Windows x64 installer**: [okbot-0.1.26-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.26-1/okbot-0.1.26-win-x64.exe), about 160 MB. The [release page](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) includes `SHA256SUMS`.
+The current release provides a **Windows x64 installer**: [okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe), about 160 MB. The [release page](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) includes `SHA256SUMS`.
 
 Electron, the magpie gateway, DeepSeek Harness and Cua Driver are included. No separate Node.js or Go installation is needed. The local build is unsigned. Closing the window hides the app to the tray; use the tray menu to quit.
 

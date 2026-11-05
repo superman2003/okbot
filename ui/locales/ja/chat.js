@@ -1,5 +1,13 @@
 export default {
   sync: {
+    "twoWay": "WeChat と同じ会話です。デスクトップのメッセージと返信を WeChat に転送します。",
+    "placeholder": "ここで WeChat の会話を続ける",
+    "sharedContext": "WeChat · 双方向同期",
+    "waitingSync": "WeChat の送信可能時間または枠を待っています。ここで会話を続けられます。WeChat で送信すると同期が再開します。",
+    "connectToSend": "WeChat が未接続か送信権限がありません。再接続してください。履歴は閲覧できます。",
+    "accepted": "受信しました。処理中です…",
+    "sendFailed": "送信が完了しませんでした。接続を確認して再試行してください。",
+
     "choose": "会話を切り替え",
     "local": "アプリ内チャット",
     "channel": "チャネル",

@@ -4,11 +4,11 @@
 
 [简体中文](./README.md) · [English](./README_en.md) · [日本語](./README_ja.md) · [한국어](./README_ko.md) · [Русский](./README_ru.md)
 
-[Windows 版](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1) · [問題報告](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
+[Windows 版](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1) · [問題報告](https://github.com/superman2003/okbot/issues) · [MIT](./LICENSE)
 
 ## 📥 ダウンロード
 
-現在のリリースは **Windows x64 インストーラー** [okbot-0.1.26-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.26-1/okbot-0.1.26-win-x64.exe)（約160 MB）を提供します。[リリースページ](https://github.com/superman2003/okbot/releases/tag/custom-0.1.26-1)に `SHA256SUMS` もあります。
+現在のリリースは **Windows x64 インストーラー** [okbot-0.1.27-win-x64.exe](https://github.com/superman2003/okbot/releases/download/custom-0.1.27-1/okbot-0.1.27-win-x64.exe)（約160 MB）を提供します。[リリースページ](https://github.com/superman2003/okbot/releases/tag/custom-0.1.27-1)に `SHA256SUMS` もあります。
 
 Electron、magpie、DeepSeek Harness、Cua Driver を同梱します。Node.js と Go の別途インストールは不要です。このビルドは未署名です。ウィンドウを閉じるとトレイに格納され、トレイから終了できます。他の OS はソースビルドを参照してください。
 
