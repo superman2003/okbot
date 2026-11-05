@@ -1,6 +1,37 @@
-# AnyModelBot 官网（site/）
+# okinto 中转官网（site/）
 
-Astro 5 静态站，Preact 只用在价格表、计算器（含可搜索的模型选择框）这几个岛上；样式是原生 CSS + token（`@layer tokens, base, components, app, utilities`），品牌色与 App 的 `ui/design` 相同。规格见《AnyModelBot Landing Page · 需求与样式设计稿 v3》。
+基于现有 Astro 静态站维护，AI 服务为 okinto 中转。中文、英文、日文、韩文、俄文一并维护。
+
+## 构建并导出 HTML
+
+在 site/ 目录运行：
+
+```sh
+npm ci
+npm run build:html
+npm run package:html
+```
+
+HTML 构建会读取 GitHub wmn1525/AnyModelBot 的最新 okbot Release（含安装包大小与 SHA-256）及 https://api.okinto.com/api/pricing 的公开快照。GitHub API 限流时自动从公开发布页读取。价格解析支持 New API 的固定倍率和可识别的线性分档表达式；无法识别的表达式会使构建失败，避免显示推测价格。价格单位为账户计费美元，不是充值现金价格，充值折算及缓存不计入估算。
+
+构建结果在 site/dist/；打包目录与 ZIP 在仓库 release/okbot-site-html-<版本>/ 和同名 .zip。静态包自带 Node.js 本地预览程序，解压后运行 preview.cmd 或 node preview.mjs，打开 http://127.0.0.1:4321。部署时把目录内的静态文件上传到域名根目录，无需 Astro 或 Node.js 服务端。
+
+正式域名尚未指定，默认不输出 canonical 和公开 sitemap URL。部署前通过 SITE_DOMAIN 设置实际域名（不带 https://），然后重新构建。GITHUB_URL 可覆盖下载仓库。默认不启用访问统计，不配置不存在的联系邮箱，联系入口使用项目 GitHub Issues。
+
+主页演示采用已改名的动画导览。导出的包不包含旧品牌录屏、旧分享图和第三方目录收录徽章。保留上游 MIT 版权与第三方许可声明，历史更新日志保持原文。
+
+```sh
+npm test
+npm run check
+npx astro check
+npm run check:html:browser
+```
+
+浏览器检查针对已导出的静态包，验证多语言、桌面/手机布局、下载链接、主题切换、演示弹窗和价格计算器。make-brand-card.mjs 可重建分享卡，Windows 默认用已安装的 Edge。
+
+## 架构与素材维护
+
+Astro 5 静态站，Preact 只用在价格表、计算器（含可搜索的模型选择框）这几个岛上；样式是原生 CSS + token（`@layer tokens, base, components, app, utilities`），品牌色与 App 的 `ui/design` 相同。规格见《okinto 中转 Landing Page · 需求与样式设计稿 v3》。
 
 ## 页面结构
 
@@ -17,7 +48,7 @@ Astro 5 静态站，Preact 只用在价格表、计算器（含可搜索的模�
   8. 收尾横幅（和首屏呼应：静止的大卡，跟着页面主题走——顶光 + 一层星空（深色小星点 / 浅色细小闪光）+ 底边一道扁扁的地平线，六个机器人站在地平线后面探出半个头；高度收紧，不设最小高度）
 - **章节头**：`components/SectionHead.astro`——一列左对齐：细线 → 编号 / 名称 → 两段式标题（后半句次要色）→ 说明，主持机器人蹲在细线右端（规范见下文"排版规范"）。
 - **机器人互动**（`lib/eyes.ts`，台词在 i18n 的 `quips`）：戳一下回一句、连戳冒爱心 / 晕，鼠标在大头像上来回蹭会撒娇；`[data-doze]` 里的机器人 20 秒没动静会挨个打瞌睡，一动就惊醒并嘴硬；循环示意用 `data-states` / `data-shots` / `data-say-at` 驱动机器人（`scripts/tour.ts`）。
-- **页脚**（`components/Footer.astro`，每页都有）：品牌（标记 + 一句话）｜ 产品 / 资源 / 法务三栏 → **收录徽章**（“被收录于 / Featured on”，目录站要求的徽章和反链，原码在 `data/badges.ts`，写进静态 HTML，图片外链到站方并懒加载，手机上是一行横滑；删徽章可能导致下架）→ 版权行 → **眼睛田**：最下面的 AnyModelBot 大字标由几百枚迷你 Eyes 标记拼成（一格一张小机器人脸，比例和 `EyesMark.astro` 一致），画在 canvas 上（`scripts/eyefield.ts`，纯逻辑在 `lib/eyefield.ts`）。宽屏一行、手机三行（按画布比例判断，比例由 `footer.css` 定）。每个动作都对应产品本身：
+- **页脚**（`components/Footer.astro`，每页都有）：品牌（标记 + 一句话）｜ 产品 / 资源 / 法务三栏 → 版权行 → **眼睛田**：最下面的 okinto 中转 大字标由几百枚迷你 Eyes 标记拼成（一格一张小机器人脸，比例和 `EyesMark.astro` 一致），画在 canvas 上（`scripts/eyefield.ts`，纯逻辑在 `lib/eyefield.ts`）。宽屏一行、手机三行（按画布比例判断，比例由 `footer.css` 定）。每个动作都对应产品本身：
   - **醒过来**：第一次滚到时从左到右一张张弹出来、睁眼（内容出现）。
   - **看着你**：所有眼睛跟着指针看，鼠标附近的脸探出头、眼睛睁大，按住时一起眯眼（机器人的反应）；指针离开就自己东张西望、偶尔眨眼。
   - **发消息**：点一下（手机上点一下），从那里按远近一张张眯眼笑——"挨个收到了"（对点击的反馈；不画扩散的圈）。
@@ -25,7 +56,7 @@ Astro 5 静态站，Preact 只用在价格表、计算器（含可搜索的模�
   - **打瞌睡**：9 秒没人动，慢慢闭眼、目光耷拉；指针一动，从指针那里一圈圈醒过来（机器人的状态，同 `[data-doze]`）。睡着时不换脑。
   - 只在页脚进视口、标签页可见时跑；"减少动态效果"时画一张静止的字标；无 JS 时整块不显示。配色：深色是灰面罩 + 发光的眼睛；浅色是淡彩面罩 + 墨色眼睛——每张脸的面罩用它那个角色的辉光色调进底色、从字标顶到底由浅变深，一圈极细的边，整块像一片粉彩马赛克，"换脑"时整片换色调（不用整块墨色，也不出现白底上的荧光色）。字标盒子贴着字形（宽屏 7.4:1、手机 1.3:1），画布上下各出血 16px 给探头的脸，不额外留白。
 - **附属页**：`/pricing`（价格卡、订阅制对照、价格表、计算器）、`/download`（页头一个按系统识别的主按钮，和平台卡一起落在背景同首页 Hero 的圆角大卡片里；Windows、macOS、Linux 三张卡；Docker、CLI 两张卡；校验）、`/security`、`/changelog`、`/privacy`、`/licenses`，以及 `/partners`（合作伙伴：首屏 + 佣金示意、怎么获得佣金、适合谁、为什么好推广、申请入口。佣金比例、价格和结算规则不写，一对一谈）。
-- **合作申请**（`views/PartnersView.astro`）：官网不收表单。页面上的申请按钮都跳到 Modelflare 控制台的 AnyModelBot 合作页（`MF.partnerApply(lang)`，从 `/<语言>/sign-in` 带回跳地址进 `/affiliate-program?tab=anymodelbot`，这样界面语言跟官网一致；没登录时先登录），因为专属优惠券和佣金都挂在 Modelflare 账号上。页面上也留了邮箱 `support@anymodel.bot`。
+- **合作申请**（`views/PartnersView.astro`）：申请按钮使用 `MF.partnerApply(lang)`，跳到 `https://api.okinto.com/register`。联系入口使用 GitHub Issues。
 - **导航**（`components/Nav.astro`）：通栏，和正文同一个容器——logo、下载按钮分别对齐内容的左右边线，链接居中：机器人 · 功能 · 模型 · 数据（首页锚点）· 价格（独立页）· 文档。停在顶上时透明，滚动后铺半透明底色和一根底线。一套尺寸到底：所有控件（含下载按钮）都是 32 高的胶囊，文字 14、图标 16，控件之间 2px、工具组和下载之间 12px。
 - **顶部公告条**（`components/SiteBanner.astro`，内容在 `src/data/announcements.ts`）：发版条（版本取自 `releases.json`，按访客系统直接下载对应安装包，发布后显示 30 天）+ 宣传 / 公告，多条时轮播、可翻页；支持时间窗、截止倒计时、按 id 记住关闭；浏览器语言和页面不一致时附带语言切换。地址加 `?banner=preview` 可预览全部条目。埋点 `banner_view` / `banner_click` / `banner_dismiss`。
 
@@ -232,7 +263,7 @@ docker compose -f deploy/compose.yml --env-file deploy/.env up -d --build
 
 ## 数据从哪来
 
-- **价格**：构建时请求 `https://modelflare.dev/api/pricing`，用 `src/lib/pricing.ts` 算出默认线路价、分档、条件价线路和官方价（规则与 modelflare.dev/pricing 前端一致：有 `official_input_price` 用它，否则用基础价），写入 `src/data/pricing.snapshot.json`。抓取失败或数据异常时沿用快照，页面显示快照日期。
+- **价格**：构建时请求 `https://api.okinto.com/api/pricing`，由 `src/lib/pricing.ts` 解析并写入 `src/data/pricing.snapshot.json`。价格单位、分档表达式支持范围与失败策略见上面的构建说明。
 - **GitHub 星数**：线上的 builder 每 2 分钟向 GitHub 取一次，写到 `/srv/site/live/stars.json`，不用重新构建；页面打开时取站内的 `/stars.json`（`src/scripts/stars.ts`，缓存 1 分钟），所以数字最多晚 3 分钟左右。`scripts/fetch-github-stars.ts` 在 `npm run build` 时另取一次写进 `src/data/github.json`，作为页面的初始值和 `/stars.json` 取不到时的备用值；取不到就沿用上一个值，不影响构建。不在浏览器里请求 GitHub：不把访客 IP 发给第三方。
 - **机器人**：`scripts/sync-from-app.ts` 从 `../ui/design/bots/*.webp` 复制精灵图、从 `../THIRD_PARTY_NOTICES.md` 同步许可（Docker 构建上下文里没有应用目录，用已提交的副本）；几何（`src/lib/bots.ts`）与 `../ui/components/avatar.js` 的 `BOT_CHARS` 不一致时会警告。头像样式 `src/styles/bots.css` 移植自 `../ui/design/components/avatar.css`。
   - 精灵图另有同分辨率的 AVIF 版（`public/bots/*.avif`，约为 WebP 的一半），支持的浏览器经 `image-set()` 优先用它，其他照旧用 WebP。AVIF 必须从原图编码（`npm run bots:avif`：重跑 `../scripts/build-bot-avatars.py --png` 拿无损精灵图，q58 的画质按 PSNR 不低于 WebP q86），不能拿 WebP 再转。生成时把对应 WebP 的哈希记在 `src/data/bots-avif.json`；WebP 更新了而 AVIF 没重做，`check-images` 会失败。

@@ -90,7 +90,7 @@ node docs/assets/_src/record/mock-server.mjs --scene fresh --port 4173       # �
 
 都在 `stage/`，中性的深色窗口，不仿任何系统或第三方产品：
 
-- G1、G6：浏览器窗口和 Modelflare 授权页（地址栏 modelflare.dev，一张"AnyModelBot 想连接你的 Modelflare 账户 / 继续"的卡片）；
+- G1、G6：历史录制使用模拟的浏览器授权页；当前 README 不引用这些录屏。重新录制时，应按 okinto 中转实际的控制台和 API Key 接入流程更新模拟页面、域名和文案。
 - G2：桌面、下载文件夹窗口、安装向导；
 - G4：桌面、文本编辑器窗口（记事本）和它的另存为对话框、桌面图标；
 - G5：看图窗口；
