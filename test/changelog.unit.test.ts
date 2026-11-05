@@ -18,8 +18,11 @@ describe("更新日志", () => {
 
   it("当前版本中英文都写了；发布说明中文在前", () => {
     const notes = execFileSync(process.execPath, ["scripts/release-notes.mjs", version], { encoding: "utf8" });
-    expect(notes).toContain("### 新增");
-    expect(notes.indexOf("### 新增")).toBeLessThan(notes.indexOf("### New"));
+    const zh = changelogSection(fs.readFileSync("CHANGELOG.md", "utf8"), version);
+    const en = changelogSection(fs.readFileSync("CHANGELOG_en.md", "utf8"), version);
+    expect(zh).toBeTruthy();
+    expect(en).toBeTruthy();
+    expect(notes.startsWith(`${zh}\n\n---\n\n${en}`)).toBe(true);
   });
 
   it("这个版本没写更新日志：脚本失败，发布流程开始就停下", () => {
