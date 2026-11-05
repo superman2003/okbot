@@ -1,5 +1,25 @@
 // official · en：官方 API Key（components/official-keys.js、设置 → 模型）
 export default {
+  "custom": {
+    "back": "Other connection options",
+    "title": "Custom upstream",
+    "summary": "Set your own API URL and Key, fetch models and choose a default",
+    "configure": "Configure",
+    "note": "Connect any OpenAI-compatible Chat Completions service. Credentials stay on this device.",
+    "url": "API Base URL",
+    "keepKey": "Leave blank to keep saved key ••••{tail}",
+    "discover": "Fetch upstream models",
+    "model": "Default model",
+    "choose": "Choose an upstream model",
+    "manual": "Or enter an exact model ID",
+    "modelNote": "If /models is unavailable, enter the model ID manually. Image, embedding and reranking models cannot be used for chat.",
+    "test": "Test selected model",
+    "testNote": "Sends one short request to this upstream; normal API charges may apply.",
+    "testOk": "The selected model replied successfully.",
+    "found": "Fetched {count} models. Choose a chat model, then test it.",
+    "save": "Save and use this model",
+    "remove": "Disconnect custom upstream"
+},
   "useOwn": "Use your own API key",
   "choose": "Choose a provider",
   "placeholder": "Paste your {name} API key",

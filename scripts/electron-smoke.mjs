@@ -8,9 +8,10 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const exe = process.argv[2];
-const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-electron-"));
+// Use a canonical path for Electron's isolated profile.
+const dataDir = fs.mkdtempSync(path.join(fs.realpathSync.native(os.tmpdir()), "amb-electron-"));
 const shot = path.join(dataDir, "smoke.png");
-let cmd = exe ?? require("electron");
+let cmd = exe ? path.resolve(exe) : require("electron");
 let args = exe ? [] : ["."];
 if (process.platform === "linux") args.push("--no-sandbox");
 if (process.platform === "linux" && !process.env.DISPLAY) {
@@ -18,16 +19,28 @@ if (process.platform === "linux" && !process.env.DISPLAY) {
   args = ["-a", "-s", "-screen 0 1400x900x24", cmd, ...args, "--disable-gpu"];
   cmd = "xvfb-run";
 }
-const childEnv = { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot };
+const childEnv = { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot, AMB_LOG_STDOUT: "1", AMB_CATALOG: "off", AMB_PWSH_AUTO_INSTALL: "0" };
 delete childEnv.ELECTRON_RUN_AS_NODE;
-const r = spawnSync(cmd, args, { env: childEnv, encoding: "utf8", timeout: 120_000 });
-const out = (r.stdout || "") + (r.stderr || "");
+// Keep early startup diagnostics available even when no SMOKE line is emitted.
+const stdoutPath = path.join(dataDir, "stdout.log");
+const stderrPath = path.join(dataDir, "stderr.log");
+const stdout = fs.openSync(stdoutPath, "w");
+const stderr = fs.openSync(stderrPath, "w");
+let r;
+try {
+  r = spawnSync(cmd, args, { env: childEnv, stdio: ["ignore", stdout, stderr], windowsHide: true, timeout: 120_000 });
+} finally {
+  fs.closeSync(stdout);
+  fs.closeSync(stderr);
+}
+const out = fs.readFileSync(stdoutPath, "utf8") + fs.readFileSync(stderrPath, "utf8");
 const line = out.split("\n").find((l) => l.startsWith("SMOKE "));
 if (!line) {
+  console.error({ status: r.status, signal: r.signal, error: r.error?.message, dataDir });
   console.error(out.slice(-3000));
   process.exit(1);
 }
 const res = JSON.parse(line.slice(6));
 console.log(res, "截图：", shot);
-const ok = res.hasUi && res.newApiForm && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
+const ok = r.status === 0 && res.hasUi && res.customUpstreamForm && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
 process.exit(ok ? 0 : 1);

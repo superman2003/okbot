@@ -4,6 +4,7 @@ import path from "node:path";
 import { saveConfigFile, type AppConfig, type ReasoningEffort } from "./config.js";
 import { Store, type Bot, type ChannelAccount } from "./store/db.js";
 import { OpenAICompatClient, type ModelClient } from "./llm/client.js";
+import { CUSTOM_PROVIDER, customModel, isCustomModel, normalizeUpstreamUrl, validateUpstreamKey, validateUpstreamModel, discoverUpstream, testUpstream } from "./upstream.js";
 import { BotRuntime } from "./core/runtime.js";
 import { KeyedQueue } from "./core/queue.js";
 import { deferNotice, interruptedText, takeInterrupted, type Interrupted } from "./core/recovery.js";
@@ -97,6 +98,7 @@ export interface ModelflareStatus {
   connected: boolean;
   /** 填了至少一家官方 API 的 Key：这时没有 OKINTO 也能用 */
   official: boolean;
+  custom?: boolean;
   keyTail: string;
   line: ModelflareLine;
   baseUrl: string;
@@ -279,6 +281,7 @@ export class App {
       // 代理的对话接口按 OKINTO 目录选（Responses / Anthropic Messages / Chat）；外部端点只当它会 Chat
       apiInfo: async (model) => {
         if (!this.magpie) return undefined;
+        if (isCustomModel(model)) return { endpoints: ["openai"] };
         const info = await this.infoOf(model);
         return info && { endpoints: info.endpoints, reasoning: info.reasoning };
       },
@@ -416,6 +419,7 @@ export class App {
    * 而不是悄悄删掉压缩项重试（那样会丢掉之前的上下文）。外部端点模式下代理只走 Chat（见 apiInfo），不做。
    */
   private compactEndpoint(model: string): CompactEndpoint | undefined {
+    if (isCustomModel(model)) return undefined;
     if (!this.magpie || officialOf(model) || this.account instanceof NewApiAccountManager && this.account.active) return undefined;
     // 网关里的模型名是 <provider id>/<上游模型名>；provider 必须正好是它（upstreamEndpoint 找不到时会退回共用连接）
     const i = model.indexOf("/");
@@ -442,6 +446,7 @@ export class App {
    */
   routeModel(botId: string, model: string): string {
     if (!this.magpie) return model;
+    if (isCustomModel(model)) return model.trim();
     if (officialOf(model)) return model.trim();
     if (this.account instanceof NewApiAccountManager && this.account.active) {
       const selected = parsePlaygroundModel(model);
@@ -452,6 +457,7 @@ export class App {
     const shared = this.magpie.hasProvider(own) ? own : this.magpie.modelflareProviderId;
     if (shared) return routeModel(name, shared);
     const other = this.magpie.officialProviderIds().find((id) => this.magpie!.modelPicks(id).includes(name));
+    if (!other && this.magpie.customInfo().models.includes(name)) return customModel(name);
     return other ? `${other}/${name}` : routeModel(model, MODELFLARE_PROVIDER);
   }
 
@@ -632,6 +638,7 @@ export class App {
 
   /** 估算花费用的单价：缓存的 OKINTO 目录里这个模型的（去掉内置网关的 provider 前缀，再试最后一段）；没读过就去读，这次先没有 */
   private ratesOf(model: string): Rates | undefined {
+    if (isCustomModel(model)) return undefined;
     const c = this.modelInfoCache;
     if (!c || Date.now() - c.at > 3600_000) void this.modelInfo().catch(() => undefined);
     if (!c) return undefined;
@@ -666,7 +673,7 @@ export class App {
     this.modelInfoLoading ??= (async () => {
       const key = this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER) ?? "";
       // 只填了官方 Key 的用户和 OKINTO 没有关系：连公开价格目录也不去读（docs/privacy.md）
-      const official = this.magpie?.officialProviderIds().length ?? 0;
+      const official = (this.magpie?.officialProviderIds().length ?? 0) + (this.magpie?.customInfo().connected ? 1 : 0);
       const data = {
         ...(key || !official
           ? await loadModelInfo({
@@ -699,6 +706,7 @@ export class App {
 
   /** 某个模型的资料：官方 API 的按完整 id；其余去掉内置网关的 provider 前缀，再试最后一段（openai/x → x） */
   private async infoOf(model: string): Promise<ModelInfo | undefined> {
+    if (isCustomModel(model)) return undefined;
     const info = await this.modelInfo();
     if (officialOf(model)) return info[model.trim()];
     const bare = parsePlaygroundModel(model)?.model ?? bareModel(model);
@@ -851,7 +859,51 @@ export class App {
     }
     if (!this.magpie) return { mode: "external", connected: true, official: false, keyTail: "", line, baseUrl: this.config.magpie.externalBaseUrl, gateway: "external" };
     const info = this.magpie.modelflareInfo();
-    return { mode: "managed", connected: info.connected, official: this.magpie.officialProviderIds().length > 0, keyTail: info.keyTail, line, baseUrl: info.baseUrl || modelflareBaseUrl(line), gateway: this.magpie.state };
+    return { mode: "managed", custom: this.magpie.customInfo().connected, connected: info.connected, official: this.magpie.officialProviderIds().length > 0, keyTail: info.keyTail, line, baseUrl: info.baseUrl || modelflareBaseUrl(line), gateway: this.magpie.state };
+  }
+
+  upstreamStatus() {
+    const info = this.magpie?.customInfo() ?? { connected: false, baseUrl: "", keyTail: "", models: [] };
+    return { ...info, model: isCustomModel(this.config.llm.defaultModel) ? this.config.llm.defaultModel.slice(CUSTOM_PROVIDER.length + 1) : "" };
+  }
+
+  private upstreamCredentials(input: { baseUrl?: unknown; key?: unknown }) {
+    if (!this.magpie) throw new Error(t("app.external_mode"));
+    const baseUrl = normalizeUpstreamUrl(input.baseUrl);
+    // A saved key may only be reused at its saved address. Editing the URL requires a new key.
+    const saved = this.magpie.customInfo();
+    const key = validateUpstreamKey(input.key || (saved.baseUrl === baseUrl ? this.magpie.providerKey(CUSTOM_PROVIDER) : ""));
+    registerSecret(key);
+    return { baseUrl, key };
+  }
+
+  async discoverCustom(input: { baseUrl?: unknown; key?: unknown }): Promise<string[]> {
+    const { baseUrl, key } = this.upstreamCredentials(input);
+    return discoverUpstream(baseUrl, key, this.desktop?.fetch ?? fetch);
+  }
+
+  async testCustom(input: { baseUrl?: unknown; key?: unknown; model?: unknown }): Promise<void> {
+    const { baseUrl, key } = this.upstreamCredentials(input);
+    await testUpstream(baseUrl, key, validateUpstreamModel(input.model), this.desktop?.fetch ?? fetch);
+  }
+
+  async connectCustom(input: { baseUrl?: unknown; key?: unknown; model?: unknown; models?: unknown }): Promise<void> {
+    const { baseUrl, key } = this.upstreamCredentials(input);
+    const model = validateUpstreamModel(input.model);
+    if (input.models !== undefined && (!Array.isArray(input.models) || input.models.length > 10000)) throw new Error("模型列表格式无效");
+    const models = [...new Set([model, ...(Array.isArray(input.models) ? input.models.map(validateUpstreamModel) : [])])];
+    await this.magpie!.connectCustom(baseUrl, key, models);
+    this.setDefaultModel(customModel(model));
+    this.modelInfoCache = undefined;
+    await this.runtime.listModels(true).catch(() => []);
+    void this.agent.refreshIdle();
+  }
+
+  async disconnectCustom(): Promise<void> {
+    await this.magpie?.disconnectCustom();
+    if (isCustomModel(this.config.llm.defaultModel)) this.setDefaultModel("");
+    this.modelInfoCache = undefined;
+    await this.runtime.listModels(true).catch(() => []);
   }
 
   // ---------- 官方 API（用户自己的 Key，src/official-providers.ts） ----------

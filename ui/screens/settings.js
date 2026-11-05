@@ -20,6 +20,7 @@ import { TroubleshootPane } from "./troubleshoot.js";
 import { ConnectionSheets, connectionRows, useConnections } from "./connections.js";
 import { PwshHint } from "../components/pwsh-hint.js";
 import { OfficialKeyForm, officialName } from "../components/official-keys.js";
+import { UpstreamForm } from "../components/upstream.js";
 import { AccountLogin, KeyForm, lineOptions } from "./onboarding.js";
 import { t, has, useLang, getLangPref, onLangChange, changeLang, LANGS, LANG_NAMES } from "../lib/i18n.js";
 import { fmtTimeOfDay } from "../lib/format.js";
@@ -213,6 +214,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   // 官方 API：各家的连接状态；keySheet 是正在填 Key 的那一家
   const [official, setOfficial] = useState(null);
   const [keySheet, setKeySheet] = useState(null);
+  const [upstreamSheet, setUpstreamSheet] = useState(false);
   const [invite, setInvite] = useState(null);
   const [unread, setUnread] = useState(null);
   const [cu, setCu] = useState(null);
@@ -460,6 +462,8 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
         ctl: html`<${Seg} label=${t("models.effort.name")} value=${effort} onChange=${(v) => setEffort(v).then((ok) => ok && saved())} options=${effortOptions()} />` },
       showsStrategy(acct) && { tab: "modelflare", group: "models", id: "key-quality", name: t("settings.rows.keyQuality.name"), sub: t("settings.rows.keyQuality.sub"), keys: t("settings.rows.keyQuality.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.keyQuality.name")} value=${acct.keyQuality.strategy} onChange=${putKeyQuality} options=${strategyOptions()} />` },
+      managed && { tab: "modelflare", id: "custom-upstream", name: t("official.custom.title"), sub: t("official.custom.summary"), keys: `${t("official.custom.title")} url key base url upstream ccs`,
+        ctl: html`<button type="button" class="text" onClick=${() => setUpstreamSheet(true)}>${t("official.custom.configure")}</button>` },
       ...(managed && official
         ? [
             ...official.filter((p) => p.connected).map((p, i) => ({
@@ -561,6 +565,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
     ${sheet === "notifications" && html`<${NotificationsSheet} onClose=${() => { setSheet(""); setUnread(null); }} />`}
     ${sheet === "login" && html`<${Sheet} title=${t("settings.rows.account.login")} onClose=${() => setSheet("")}>
       <${AccountLogin} manual=${!!(acct && acct.manualLogin)} onSignedIn=${(a) => { setSheet(""); if (a) onAccount(a); onMfChanged(); reloadModels?.(); }} />
+    <//>`}
+    ${upstreamSheet && html`<${Sheet} title=${t("official.custom.title")} onClose=${() => setUpstreamSheet(false)}>
+      <${UpstreamForm} onConnected=${async () => { setUpstreamSheet(false); saved(); await onMfChanged(); await reloadModels(); const r = await api("/settings"); setS(r); onSettings?.(r); }} />
     <//>`}
     ${keySheet && html`<${Sheet} title=${officialName(keySheet)} onClose=${() => setKeySheet(null)}>
       <${OfficialKeyForm} provider=${keySheet} onConnected=${officialChanged} />

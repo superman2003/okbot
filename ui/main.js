@@ -145,7 +145,7 @@ function App() {
   useEffect(() => {
     if (settings) adoptServerLang(settings.lang);
   }, [settings && settings.lang]);
-  const connected = !!(mf && (mf.mode === "external" || mf.connected || mf.official));
+  const connected = !!(mf && (mf.mode === "external" || mf.connected || mf.official || mf.custom));
   const [botsData, botsErr, reloadBots, setBotsData] = useLoader(() => (connected ? api("/bots") : Promise.resolve(null)), [connected]);
   const [groupsData, , reloadGroups] = useLoader(() => (connected ? api("/groups") : Promise.resolve(null)), [connected]);
   const [groupSheet, setGroupSheet] = useState(null); // 建群 / 改群的弹窗：{ group? }

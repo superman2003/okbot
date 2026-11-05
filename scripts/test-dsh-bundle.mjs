@@ -26,14 +26,18 @@ const copy = path.join(tmp, "dsh");
 let status = 1;
 try {
   fs.cpSync(bundle, copy, { recursive: true });
-  const electron = createRequire(import.meta.url)("electron");
-  const env = { ...process.env, ELECTRON_RUN_AS_NODE: "1", AMB_DSH_RUNTIME: path.join(copy, "dsh.asar") };
+  const electron = process.env.AMB_ELECTRON_BIN || createRequire(import.meta.url)("electron");
+  const testDataRoot = path.join(tmp, "test-data");
+  fs.mkdirSync(testDataRoot);
+  const env = { ...process.env, ELECTRON_RUN_AS_NODE: "1", AMB_DSH_RUNTIME: path.join(copy, "dsh.asar"), AMB_DSH_BUNDLE_TEST_DATA_ROOT: testDataRoot };
   const probe = spawnSync(electron, ["-e", "process.exit(require('fs').existsSync(process.env.AMB_DSH_RUNTIME + '/node_modules/@deepseek-ai/dsh-sdk-client/package.json') ? 0 : 1)"], { env });
   if (probe.status !== 0) throw new Error(`Electron cannot read ${env.AMB_DSH_RUNTIME}`);
   const vitest = path.join(root, "node_modules", "vitest", "vitest.mjs");
-  const r = spawnSync(electron, [vitest, "run", "test/agent.integration.test.ts", ...process.argv.slice(3)], { cwd: root, env, stdio: "inherit" });
+  // The sandbox suite requires Linux/bwrap. Windows uses the real-DSH multi-API suite.
+  const testFile = process.platform === "win32" ? "test/official-agent.integration.test.ts" : "test/agent.integration.test.ts";
+  const r = spawnSync(electron, [vitest, "run", testFile, ...process.argv.slice(3)], { cwd: root, env, stdio: "inherit" });
   status = r.status ?? 1;
 } finally {
-  fs.rmSync(tmp, { recursive: true, force: true });
+  fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
 }
 process.exit(status);

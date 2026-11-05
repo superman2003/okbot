@@ -1,10 +1,14 @@
-<h1 align="center">okinto 中转</h1>
+<h1 align="center">okbot</h1>
+
+> **superman2003 维护的二次开发版。** 基于 [wmn1525/AnyModelBot](https://github.com/wmn1525/AnyModelBot) 修改；该项目源自 [modelflare-ai/AnyModelBot](https://github.com/modelflare-ai/AnyModelBot)。本版增加自定义 OpenAI 兼容中转站 URL / Key、获取上游模型、手填与测试模型、默认模型保存及 Windows 安装打包改进。保留原项目版权、MIT 许可证和第三方声明；不声称原项目为本仓库作者从零原创。
+>
+> **Windows 安装包：** [本仓库 Releases](https://github.com/superman2003/okbot/releases)。无需安装 Node.js 或 Go。下方保留上游的通用功能说明；自定义中转站可在首次打开或「设置 → 模型 → 自定义中转站」中配置。
 
 <p align="center"><b>跑在你自己电脑上的 AI 机器人。任意模型，按量付费。</b></p>
 
 <p align="center">
   <a href="https://api.okinto.com">官网</a> |
-  <a href="https://github.com/wmn1525/AnyModelBot/releases">下载</a> |
+  <a href="https://github.com/superman2003/okbot/releases">下载</a> |
   简体中文 |
   <a href="./README_en.md">English</a> |
   <a href="./README_ja.md">日本語</a> |
@@ -13,7 +17,7 @@
   <a href="https://api.okinto.com">okinto 中转</a> |
   <a href="https://api.okinto.com/pricing">价格</a> |
   <a href="./docs/development.md">开发文档</a> |
-  <a href="https://github.com/wmn1525/AnyModelBot/issues">问题反馈</a>
+  <a href="https://github.com/superman2003/okbot/issues">问题反馈</a>
 </p>
 
 <div align="center">
@@ -78,7 +82,7 @@ macOS 用 `shasum -a 256 <文件名>`，Windows PowerShell 用 `Get-FileHash <�
 **用 Docker 部署到 NAS 或服务器**（镜像同时支持 x64 和 arm64）
 
 ```bash
-git clone https://github.com/wmn1525/AnyModelBot.git
+git clone https://github.com/superman2003/okbot.git
 cd AnyModelBot
 git submodule update --init --depth 1 vendor/magpie
 docker build -t okbot .
@@ -91,7 +95,7 @@ docker exec amb cat /data/ui-token   # 然后打开 http://<主机>:3600/?token=
 **从源码运行**
 
 ```bash
-git clone https://github.com/wmn1525/AnyModelBot.git
+git clone https://github.com/superman2003/okbot.git
 cd AnyModelBot
 npm install
 npm run setup      # 拉取并编译内置网关
@@ -105,6 +109,14 @@ npm start          # 本地管理界面：http://127.0.0.1:3600/
 界面布局、配色与交互规范见[设计库](./ui/design/README.md)。
 
 # 🌟 核心功能
+
+**自定义中转站（本地修改版）**
+
+首次启动直接填写 **API Base URL** 和 **API Key**，点击「获取上游模型」，选择默认模型后点击「测试所选模型」和「保存并使用此模型」。已有配置可在 **设置 → 模型 → 自定义中转站 → 配置** 中修改。
+
+支持 OpenAI Chat Completions 兼容服务，包括中转站与本地模型服务。站点根地址会自动补 `/v1`；带自定义路径的 Base URL 会保留原路径。不支持 `/models` 的上游可以手填模型 ID。模型测试会发送一次简短请求，按上游正常费率计费。获取列表只表示 Key 可见的模型，是否能对话请用测试按钮验证。
+
+URL、Key 和模型保存在本机 `data/` 中，重启后继续使用。Windows 本地部署完成后双击仓库根目录的 `Start-Okbot.cmd` 即可启动并打开页面，启动脚本默认只监听 `127.0.0.1:3610`，并自动带上本机访问令牌。每个机器人或已有对话单独指定过模型时，请在该机器人或对话中切换到新模型。
 
 ## 🤖 真能干活的机器人
 
@@ -234,13 +246,13 @@ okinto 中转 同样能在后台干活：交代的任务可以在后台跑完，
 - [ ] **语音消息转写**：Telegram 的语音消息目前听不到内容，微信靠平台自带的转写。
 - [ ] **独立的手机应用**：目前可以从微信、飞书、Telegram、Slack、Discord 找到你的机器人。
 
-有别的想法？欢迎提 [issue](https://github.com/wmn1525/AnyModelBot/issues) 或发起[讨论](https://github.com/wmn1525/AnyModelBot/discussions)。我们决定要做的事项，会用 [`roadmap`](https://github.com/wmn1525/AnyModelBot/labels/roadmap) 标签跟踪。
+有别的想法？欢迎提 [issue](https://github.com/superman2003/okbot/issues) 或发起[讨论](https://github.com/superman2003/okbot/discussions)。我们决定要做的事项，会用 [`roadmap`](https://github.com/superman2003/okbot/labels/roadmap) 标签跟踪。
 
 # 🤝 参与贡献
 
 欢迎提交 bug 报告、修复、文档和想法。
 
-1. 先看看已有的 [issue](https://github.com/wmn1525/AnyModelBot/issues) 和[讨论](https://github.com/wmn1525/AnyModelBot/discussions)。带 [`good first issue`](https://github.com/wmn1525/AnyModelBot/labels/good%20first%20issue) 标签的 issue 适合入门。
+1. 先看看已有的 [issue](https://github.com/superman2003/okbot/issues) 和[讨论](https://github.com/superman2003/okbot/discussions)。带 [`good first issue`](https://github.com/superman2003/okbot/labels/good%20first%20issue) 标签的 issue 适合入门。
 2. Fork 仓库，从 `master` 新建分支。
 3. 本地运行并修改：
 
@@ -269,22 +281,22 @@ okinto 中转 同样能在后台干活：交代的任务可以在后台跑完，
 
 # 💬 社区
 
-- **提问与想法：** [GitHub Discussions](https://github.com/wmn1525/AnyModelBot/discussions)
-- **Bug 与功能建议：** [GitHub Issues](https://github.com/wmn1525/AnyModelBot/issues)
+- **提问与想法：** [GitHub Discussions](https://github.com/superman2003/okbot/discussions)
+- **Bug 与功能建议：** [GitHub Issues](https://github.com/superman2003/okbot/issues)
 
 # 🚀 贡献者
 
-<a href="https://github.com/wmn1525/AnyModelBot/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=wmn1525/AnyModelBot" alt="okinto 中转 的贡献者" />
+<a href="https://github.com/superman2003/okbot/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=superman2003/okbot" alt="okinto 中转 的贡献者" />
 </a>
 
 # ⭐️ Star 趋势
 
-<a href="https://www.star-history.com/#wmn1525/AnyModelBot&Date">
+<a href="https://www.star-history.com/#superman2003/okbot&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=wmn1525/AnyModelBot&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=wmn1525/AnyModelBot&type=Date" />
-    <img alt="okinto 中转 的 Star 趋势图" src="https://api.star-history.com/svg?repos=wmn1525/AnyModelBot&type=Date" width="100%" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=superman2003/okbot&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=superman2003/okbot&type=Date" />
+    <img alt="okinto 中转 的 Star 趋势图" src="https://api.star-history.com/svg?repos=superman2003/okbot&type=Date" width="100%" />
   </picture>
 </a>
 
@@ -293,11 +305,11 @@ okinto 中转 同样能在后台干活：交代的任务可以在后台跑完，
 okinto 中转 以 [MIT 许可证](./LICENSE)发布。随附的第三方软件保留各自的许可证，见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) 和 [`LICENSES/`](./LICENSES) 目录。
 
 <!-- link & badge references -->
-[release-shield]: https://img.shields.io/github/v/release/wmn1525/AnyModelBot?include_prereleases&label=release&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIzIiB5PSI5IiB3aWR0aD0iOTQiIGhlaWdodD0iODIiIHJ4PSIzNiIgZmlsbD0iI2Q3ZmYwMCIvPjxyZWN0IHg9IjI5IiB5PSIzNiIgd2lkdGg9IjEzIiBoZWlnaHQ9IjI4IiByeD0iNi41IiBmaWxsPSIjMTYxYTAwIi8+PHJlY3QgeD0iNTgiIHk9IjM2IiB3aWR0aD0iMTMiIGhlaWdodD0iMjgiIHJ4PSI2LjUiIGZpbGw9IiMxNjFhMDAiLz48L3N2Zz4=&style=flat-square&labelColor=161a00&color=d7ff00
-[downloads-shield]: https://img.shields.io/github/downloads/wmn1525/AnyModelBot/total?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
-[stars-shield]: https://img.shields.io/github/stars/wmn1525/AnyModelBot?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
-[license-shield]: https://img.shields.io/github/license/wmn1525/AnyModelBot?logo=opensourceinitiative&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
-[ci-shield]: https://img.shields.io/github/actions/workflow/status/wmn1525/AnyModelBot/ci.yml?branch=master&label=CI&logo=githubactions&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
+[release-shield]: https://img.shields.io/github/v/release/superman2003/okbot?include_prereleases&label=release&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB4PSIzIiB5PSI5IiB3aWR0aD0iOTQiIGhlaWdodD0iODIiIHJ4PSIzNiIgZmlsbD0iI2Q3ZmYwMCIvPjxyZWN0IHg9IjI5IiB5PSIzNiIgd2lkdGg9IjEzIiBoZWlnaHQ9IjI4IiByeD0iNi41IiBmaWxsPSIjMTYxYTAwIi8+PHJlY3QgeD0iNTgiIHk9IjM2IiB3aWR0aD0iMTMiIGhlaWdodD0iMjgiIHJ4PSI2LjUiIGZpbGw9IiMxNjFhMDAiLz48L3N2Zz4=&style=flat-square&labelColor=161a00&color=d7ff00
+[downloads-shield]: https://img.shields.io/github/downloads/superman2003/okbot/total?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
+[stars-shield]: https://img.shields.io/github/stars/superman2003/okbot?logo=github&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
+[license-shield]: https://img.shields.io/github/license/superman2003/okbot?logo=opensourceinitiative&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/superman2003/okbot/ci.yml?branch=master&label=CI&logo=githubactions&logoColor=d7ff00&style=flat-square&labelColor=161a00&color=d7ff00
 [platform-shield]: https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Docker-d7ff00?style=flat-square&labelColor=161a00
 [pricing-shield]: https://img.shields.io/badge/pricing-pay--as--you--go-d7ff00?style=flat-square&labelColor=161a00
 [okinto-shield]: https://img.shields.io/badge/okinto-%E4%B8%AD%E8%BD%AC-d7ff00?style=flat-square&labelColor=161a00
@@ -305,9 +317,9 @@ okinto 中转 以 [MIT 许可证](./LICENSE)发布。随附的第三方软件保
 [mac-badge]: https://img.shields.io/badge/macOS-161a00?style=for-the-badge&logo=apple&logoColor=d7ff00
 [linux-badge]: https://img.shields.io/badge/Linux-161a00?style=for-the-badge&logo=linux&logoColor=d7ff00
 
-[releases-link]: https://github.com/wmn1525/AnyModelBot/releases
-[stars-link]: https://github.com/wmn1525/AnyModelBot/stargazers
-[license-link]: https://github.com/wmn1525/AnyModelBot/blob/master/LICENSE
-[ci-link]: https://github.com/wmn1525/AnyModelBot/actions/workflows/ci.yml
+[releases-link]: https://github.com/superman2003/okbot/releases
+[stars-link]: https://github.com/superman2003/okbot/stargazers
+[license-link]: https://github.com/superman2003/okbot/blob/master/LICENSE
+[ci-link]: https://github.com/superman2003/okbot/actions/workflows/ci.yml
 [pricing-link]: https://api.okinto.com/pricing
 [okinto-link]: https://api.okinto.com

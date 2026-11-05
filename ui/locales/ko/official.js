@@ -1,5 +1,25 @@
 // official · ko：官方 API Key（components/official-keys.js、设置 → 模型）
 export default {
+  "custom": {
+    "back": "다른 연결 방법",
+    "title": "사용자 지정 중계 서버",
+    "summary": "API URL과 키를 입력하고 업스트림 모델을 가져와 기본 모델 선택",
+    "configure": "설정",
+    "note": "OpenAI Chat Completions 호환 서비스에 연결합니다. 키는 이 기기에만 저장됩니다.",
+    "url": "API 기본 URL",
+    "keepKey": "비워 두면 저장된 키 사용 ••••{tail}",
+    "discover": "업스트림 모델 가져오기",
+    "model": "기본 모델",
+    "choose": "업스트림 모델 선택",
+    "manual": "정확한 모델 ID를 직접 입력할 수도 있습니다",
+    "modelNote": "/models를 지원하지 않으면 ID를 직접 입력하세요. 이미지, 임베딩, 재순위 모델은 대화에 사용할 수 없습니다.",
+    "test": "선택한 모델 테스트",
+    "testNote": "업스트림에 짧은 요청을 한 번 전송합니다. 일반 API 요금이 부과될 수 있습니다.",
+    "testOk": "선택한 모델이 정상 응답했습니다.",
+    "found": "모델 {count}개를 가져왔습니다. 대화 모델을 선택하고 테스트하세요.",
+    "save": "저장하고 이 모델 사용",
+    "remove": "사용자 지정 서버 연결 해제"
+},
   "useOwn": "내 API 키 사용",
   "choose": "서비스 선택",
   "placeholder": "{name} API 키 붙여넣기",

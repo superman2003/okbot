@@ -1,5 +1,25 @@
 // official · zh-CN：官方 API Key（components/official-keys.js、设置 → 模型）
 export default {
+  "custom": {
+    "back": "其他连接方式",
+    "title": "自定义中转站",
+    "summary": "自己填写 URL 和 Key，获取上游模型并指定默认模型",
+    "configure": "配置",
+    "note": "连接支持 OpenAI Chat Completions 的中转站或本地服务。Key 只保存在本机。",
+    "url": "API Base URL",
+    "keepKey": "留空沿用已保存的 Key ••••{tail}",
+    "discover": "获取上游模型",
+    "model": "默认模型",
+    "choose": "从上游列表选择模型",
+    "manual": "也可以手填准确的模型 ID",
+    "modelNote": "上游不支持 /models 时可手填模型 ID。图片、嵌入、重排等模型不能用于对话。",
+    "test": "测试所选模型",
+    "testNote": "向此上游发送一次简短请求，可能按正常 API 费率计费。",
+    "testOk": "模型测试成功，可以正常回复。",
+    "found": "已获取 {count} 个模型，请选择对话模型后测试。",
+    "save": "保存并使用此模型",
+    "remove": "断开自定义中转站"
+},
   "useOwn": "使用自己的 API Key",
   "choose": "选择模型服务",
   "placeholder": "粘贴 {name} 的 API Key",

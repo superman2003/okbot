@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { lineLogger, logger, registerSecret } from "../log.js";
 import { t } from "../i18n/index.js";
 import { BOT_PROVIDER_PREFIX, MODELFLARE_PROVIDER, botProviderId, keyTail, modelflareApiBases } from "../modelflare.js";
+import { CUSTOM_PROVIDER } from "../upstream.js";
 import { OFFICIAL_PREFIX, officialBases, officialLabel, officialPicks, officialProviderId, type OfficialProvider } from "../official-providers.js";
 
 const log = logger("magpie");
@@ -411,6 +412,31 @@ export class MagpieSupervisor {
     await this.spawning?.catch(() => undefined);
     this.child = undefined;
     this.state = "stopped";
+  }
+
+  customInfo(): { connected: boolean; baseUrl: string; keyTail: string; models: string[] } {
+    const p = this.readProviderRaw(CUSTOM_PROVIDER);
+    const key = this.providerKey(CUSTOM_PROVIDER);
+    return { connected: !!key, baseUrl: String(p?.chat ?? ""), keyTail: keyTail(key), models: this.modelPicks(CUSTOM_PROVIDER) };
+  }
+
+  async connectCustom(baseUrl: string, key: string, models: string[]): Promise<void> {
+    registerSecret(key);
+    const fields = { name: "Custom upstream", chat: baseUrl, key, models };
+    if (this.hasProvider(CUSTOM_PROVIDER)) return this.saveProvider(CUSTOM_PROVIDER, fields);
+    if (this.state !== "running") throw new Error(t("magpie.not_running"));
+    const res = await fetch(`${this.webOrigin}/api/provider/save`, {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: `${this.cookieName}=${this.webKey}`, origin: this.webOrigin },
+      body: JSON.stringify({ new: true, id: CUSTOM_PROVIDER, icon: "generic", ...fields }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(t("magpie.save_failed", { status: res.status, body: "" }));
+    if (!this.hasProvider(CUSTOM_PROVIDER)) throw new Error(t("magpie.verify_failed"));
+  }
+
+  async disconnectCustom(): Promise<void> {
+    if (this.hasProvider(CUSTOM_PROVIDER)) await this.deleteProvider(CUSTOM_PROVIDER);
   }
 
   // ---------- 官方 API（用户自己的 Key，直连模型厂商，src/official-providers.ts） ----------

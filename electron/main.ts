@@ -87,7 +87,7 @@ function createWindow(): void {
     // Windows：无标题栏 + 窗口按钮叠层（见上面的 titleBarOverlay）；Linux 用系统标题栏
     ...(process.platform === "darwin" ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 16, y: 23 } } : {}),
     ...(isWin ? { titleBarStyle: "hidden" as const, titleBarOverlay: titleBarOverlay() } : {}),
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: !SMOKE },
   });
   const origin = new URL(entryUrl).origin;
   // 只允许停留在本机管理界面；外部链接交给系统浏览器
@@ -272,20 +272,20 @@ async function smoke(out: string): Promise<void> {
     let screen = "";
     for (let i = 0; i < 50; i++) {
       screen = String(await wc.executeJavaScript("document.querySelector('[data-screen]')?.getAttribute('data-screen') || ''"));
-      const ready = await wc.executeJavaScript("document.body.innerText.includes(\"OKINTO\")");
+      const ready = await wc.executeJavaScript("!!document.querySelector('.upstream-form')");
       if (screen && screen !== "loading" && ready) break;
       await new Promise((r) => setTimeout(r, 200));
     }
     // Let the compositor paint the newly mounted screen before the capture.
     await wc.executeJavaScript("document.fonts.ready.then(() => true)");
     await new Promise((r) => setTimeout(r, 500));
-    const uiText = String(await wc.executeJavaScript("document.body.innerText"));
+    const customUpstreamForm = await wc.executeJavaScript("!!document.querySelector('#upstream-url') && !!document.querySelector('#upstream-key') && !!document.querySelector('#upstream-model')");
     const img = await wc.capturePage();
     fs.writeFileSync(out, img.toPNG());
     const status = await wc.executeJavaScript("fetch('/amb/api/status').then(r=>r.status)");
     const magpie = await wc.executeJavaScript("fetch('/magpie/').then(r=>r.status)");
     const title = await wc.executeJavaScript("document.title");
-    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, newApiForm: uiText.includes("OKINTO"), title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
+    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, customUpstreamForm, title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
   } finally {
     app.quit(); // 任何一步失败也退出，不让冒烟测试挂到超时
   }

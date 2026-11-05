@@ -7,6 +7,7 @@ import { html, Icon, Menu, Notice, Spinner, CopyButton, Seg } from "../component
 import { BotAvatar, MAIN_CHAR } from "../components/avatar.js";
 import { FamilyHead, PickModel, familyName, groupModels, useFamilies } from "../components/model-picker.js";
 import { OfficialStart } from "../components/official-keys.js";
+import { UpstreamForm } from "../components/upstream.js";
 import { api } from "../lib/api.js";
 import { failed } from "../lib/store.js";
 import { LANGS, LANG_NAMES, changeLang, getLangPref, t, useLang } from "../lib/i18n.js";
@@ -298,6 +299,7 @@ function LangSwitch() {
 }
 
 export function Onboarding({ gateway, defaultModel, onDone, skipModelStep }) {
+  const [custom, setCustom] = useState(true);
   const [models, setModels] = useState(null);
   // Docker / 远程部署：浏览器登录的回调到不了本程序，只能用 API Key
   const [useKey, setUseKey] = useState(false);
@@ -333,6 +335,8 @@ export function Onboarding({ gateway, defaultModel, onDone, skipModelStep }) {
       ${why && models === null && html`<${Notice} tone="amber">${why}<//>`}
       ${models !== null
         ? html`<${ModelStep} models=${models} initial=${defaultModel} onDone=${onDone} auto=${skipModelStep} />`
+        : custom
+          ? html`<${UpstreamForm} onConnected=${onDone} onBack=${() => setCustom(false)} />`
         : ownKey
           ? html`<${OfficialStart} onConnected=${loadModels} onBack=${() => setOwnKey(false)} />`
           : useKey
@@ -345,7 +349,8 @@ export function Onboarding({ gateway, defaultModel, onDone, skipModelStep }) {
           : html`<${AccountLogin} onFace=${onFace} onSignedIn=${loadModels} />
             <p class="hint">${t("onboarding.login.hint")}</p>
             <div class="links"><button type="button" class="text" onClick=${() => setUseKey(true)}>${t("onboarding.useKey")}</button></div>`}
-      ${models === null && !ownKey && html`<div class="login-links"><button type="button" class="text" onClick=${() => setOwnKey(true)}>${t("official.useOwn")}</button></div>`}
+      ${models === null && !custom && html`<div class="login-links"><button type="button" class="text" onClick=${() => setCustom(true)}>${t("official.custom.title")}</button></div>`}
+      ${models === null && !ownKey && !custom && html`<div class="login-links"><button type="button" class="text" onClick=${() => setOwnKey(true)}>${t("official.useOwn")}</button></div>`}
     </div>
   </main>`;
 }

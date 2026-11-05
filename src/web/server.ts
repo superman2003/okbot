@@ -401,6 +401,22 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         return send(res, 200, { models: [], error: (e as Error).message });
       }
     }
+    if (p === "/upstream" || p === "/upstream/models" || p === "/upstream/test") {
+      if (m === "GET" && p === "/upstream") return send(res, 200, app.upstreamStatus());
+      if (m === "DELETE" && p === "/upstream") {
+        await app.disconnectCustom();
+        return send(res, 200, app.upstreamStatus());
+      }
+      if (m === "POST" || m === "PUT") {
+        const input = await readJson(req);
+        try {
+          if (p === "/upstream/models" && m === "POST") return send(res, 200, { models: await app.discoverCustom(input) });
+          if (p === "/upstream/test" && m === "POST") { await app.testCustom(input); return send(res, 200, { ok: true }); }
+          if (p === "/upstream" && m === "PUT") { await app.connectCustom(input); return send(res, 200, app.upstreamStatus()); }
+        } catch (e) { throw new HttpError(400, (e as Error).message); }
+      }
+      throw new HttpError(405, "method not allowed");
+    }
     if (p === "/modelflare/domains/test" && m === "POST") return send(res, 200, { results: await testModelflareDomains() });
     if (p === "/modelflare" || p === "/modelflare/line") {
       if (m === "GET" && p === "/modelflare") return send(res, 200, app.modelflareStatus());
@@ -1465,6 +1481,7 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
   boundPort = (server.address() as import("node:net").AddressInfo).port;
   const shownHost = host === "0.0.0.0" || host === "::" ? "127.0.0.1" : host;
   const url = `http://${shownHost}:${boundPort}/`;
+  fs.writeFileSync(path.join(cfg.dataDir, "ui-url"), url, { mode: 0o600 });
   log.info(`UI: ${url}`);
   return {
     url,

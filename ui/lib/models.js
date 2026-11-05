@@ -101,7 +101,7 @@ export function groupModels(models, q = "") {
     const f = selected ? selected.group : modelFamily(m);
     if (!groups.has(f)) groups.set(f, []);
     // 官方 API 的模型写明是哪一家：同一个模型可能既有 OKINTO 的也有官方的，走的是两条路、两份账单
-    const source = officialSource(m);
+    const source = m.startsWith("custom-upstream/") ? "Custom" : officialSource(m);
     const label = selected ? selected.model : n.includes("/") ? n.slice(n.indexOf("/") + 1) : n;
     groups.get(f).push([m, source ? `${label} · ${source}` : label]);
   }

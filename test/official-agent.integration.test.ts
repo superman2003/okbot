@@ -84,7 +84,7 @@ d("官方 API（真实代理）", () => {
     });
     process.env.AMB_OFFICIAL_BASE_URL = vendor.url + "/v1";
     process.env.AMB_MODELFLARE_ISSUER = "http://127.0.0.1:9";
-    dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "amb-official-agent-"));
+    dataDir = fs.mkdtempSync(path.join(process.env.AMB_DSH_BUNDLE_TEST_DATA_ROOT || fs.realpathSync.native(os.tmpdir()), "amb-official-agent-"));
     app = new App(loadConfig({ dataDir, env: { AMB_UI_PORT: "0", AMB_WEIXIN_API_BASE: "http://127.0.0.1:9" } }), { printQrToTerminal: false });
     await app.start();
     base = app.web!.url.replace(/\/$/, "");
@@ -99,7 +99,8 @@ d("官方 API（真实代理）", () => {
     delete process.env.AMB_MODELFLARE_ISSUER;
     await app?.stop();
     await vendor?.close();
-    fs.rmSync(dataDir, { recursive: true, force: true });
+    // The bundle runner removes its own test-data tree after Electron exits and releases Windows handles.
+    if (!process.env.AMB_DSH_BUNDLE_TEST_DATA_ROOT) fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   });
 
   const chat = async (text: string) => {

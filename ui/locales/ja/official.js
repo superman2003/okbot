@@ -1,5 +1,25 @@
 // official · ja：官方 API Key（components/official-keys.js、设置 → 模型）
 export default {
+  "custom": {
+    "back": "ほかの接続方法",
+    "title": "カスタム中継サーバー",
+    "summary": "API URL とキーを入力し、上流モデルを取得して既定モデルを選択",
+    "configure": "設定",
+    "note": "OpenAI Chat Completions 互換のサービスに接続します。キーはこの端末にのみ保存されます。",
+    "url": "API ベース URL",
+    "keepKey": "空欄なら保存済みキーを使用 ••••{tail}",
+    "discover": "上流モデルを取得",
+    "model": "既定のモデル",
+    "choose": "上流モデルを選択",
+    "manual": "正確なモデル ID を直接入力することもできます",
+    "modelNote": "/models が利用できない場合は ID を入力してください。画像・埋め込み・再ランキング用モデルはチャットに使えません。",
+    "test": "選択したモデルをテスト",
+    "testNote": "上流に短いリクエストを1回送信します。通常の API 料金が発生する場合があります。",
+    "testOk": "選択したモデルから応答がありました。",
+    "found": "{count} 件のモデルを取得しました。チャットモデルを選んでテストしてください。",
+    "save": "保存してこのモデルを使用",
+    "remove": "カスタム接続を解除"
+},
   "useOwn": "自分の API キーを使う",
   "choose": "サービスを選択",
   "placeholder": "{name} の API キーを貼り付け",

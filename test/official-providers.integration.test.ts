@@ -130,7 +130,8 @@ d("官方 API（真实网关）", () => {
     expect((await api("/modelflare")).json).toMatchObject({ connected: false, official: true });
     expect((await api("/models")).json.models).toContain("official-openai/gpt-5.6-sol");
     const file = path.join(dataDir, "magpie", "config", "magpie", "providers.json");
-    expect(fs.statSync(file).mode & 0o077).toBe(0);
+    // Windows stat() synthesizes POSIX mode bits; access is controlled by NTFS ACLs.
+    if (process.platform !== "win32") expect(fs.statSync(file).mode & 0o077).toBe(0);
   });
 
   it("模型请求带用户的 Key 直达厂商，不带 Modelflare 的请求头", async () => {

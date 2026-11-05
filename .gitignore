@@ -10,6 +10,8 @@ data/
 !bots/**/dist/
 !bots/**/build/
 .env
+.env.*
+!.env.example
 *.log
 test-results/
 .DS_Store
