@@ -29,5 +29,5 @@ if (!line) {
 }
 const res = JSON.parse(line.slice(6));
 console.log(res, "截图：", shot);
-const ok = res.hasUi && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
+const ok = res.hasUi && res.newApiForm && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
 process.exit(ok ? 0 : 1);
