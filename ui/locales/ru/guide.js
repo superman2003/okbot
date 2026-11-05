@@ -20,7 +20,7 @@ export default {
   closeCoach: "Закрыть руководство",
   doneTitle: "Отлично!",
   fill: "Заполнить",
-  openConsole: "Включить модели изображений в консоли Modelflare ↗",
+  openConsole: "Включить модели изображений в консоли OKINTO New API ↗",
   later: "Позже",
   stopHere: "На сегодня всё",
   next: "Далее: {title}",

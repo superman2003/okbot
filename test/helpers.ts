@@ -49,7 +49,7 @@ export async function mockOpenAI(opts: { models?: string[]; key?: string | strin
     }
     if (req.url?.endsWith("/chat/completions") && req.method === "POST") {
       const b = await body(req);
-      calls.push({ model: b.model, messages: b.messages, auth: req.headers.authorization, skill: req.headers["x-modelflare-skill"] as string | undefined, api: "chat" });
+      calls.push({ model: b.model, messages: b.messages, auth: req.headers.authorization, skill: req.headers["x-anymodelbot-version"] as string | undefined, api: "chat" });
       const last = b.messages[b.messages.length - 1]?.content ?? "";
       const text = opts.reply ? opts.reply(b.messages, b.model) : `[${b.model}] 你说：${last}`;
       if (!b.stream) {
@@ -74,7 +74,7 @@ export async function mockOpenAI(opts: { models?: string[]; key?: string | strin
     if (req.url?.split("?")[0].endsWith("/v1/messages") && req.method === "POST") {
       const b = await body(req);
       const messages = (b.messages ?? []).map((m: any) => ({ role: m.role, content: textOf(m.content) }));
-      calls.push({ model: b.model, messages, auth: req.headers.authorization, skill: req.headers["x-modelflare-skill"] as string | undefined, api: "messages" });
+      calls.push({ model: b.model, messages, auth: req.headers.authorization, skill: req.headers["x-anymodelbot-version"] as string | undefined, api: "messages" });
       const text = opts.reply ? opts.reply(messages, b.model) : `[${b.model}] 你说：${messages.at(-1)?.content ?? ""}`;
       const usage = { input_tokens: 1, output_tokens: 1 };
       if (!b.stream) {

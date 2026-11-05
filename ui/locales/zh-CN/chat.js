@@ -55,10 +55,10 @@ export default {
   },
   error: {
     stopFailed: "停止失败：{error}",
-    fixKey: "去登录",
     fixOfficialKey: "去更换 Key",
     officialKeyInvalid: "{name} 拒绝了这个 API Key，它可能无效或已被撤销。",
-    authInvalid: "Modelflare 授权已失效，请重新登录。",
+    fixKey: "去更新",
+    authInvalid: "OKINTO New API 密钥失效或已被撤销。",
     loadHistory: "读取历史消息失败：{error}",
   },
   menu: {

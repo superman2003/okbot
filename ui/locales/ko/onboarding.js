@@ -5,9 +5,9 @@ export default {
   "line": {
     "label": "API 도메인",
     "sub": "도메인을 선택하거나 응답 시간을 비교하세요. 자동으로 전환되지 않습니다.",
-    "global": "modelflare.dev",
-    "cn": "origin.modelflare.dev",
-    "cf": "cf.modelflare.dev",
+    "global": "api.okinto.com",
+    "cn": "api.okinto.com",
+    "cf": "api.okinto.com",
     "test": "도메인 측정",
     "testing": "측정 중…",
     "testNote": "AnyModelBot이 실행되는 기기에서 3회 측정한 응답 시간의 중앙값과 성공 횟수를 표시합니다. API 키나 모델 호출을 사용하지 않으며 생성 속도를 측정하지 않습니다.",
@@ -16,7 +16,7 @@ export default {
     "unreachable": "연결할 수 없음"
   },
   "login": {
-    "label": "Modelflare 로그인 또는 회원가입",
+    "label": "OKINTO New API 로그인 또는 회원가입",
     "waiting": "브라우저에서 로그인을 마치면 자동으로 돌아옵니다",
     "reopen": "로그인 페이지 다시 열기 ↗",
     "copyLink": "링크 복사",
@@ -24,7 +24,9 @@ export default {
     "manualLabel": "로그인 후 링크",
     "manualSubmit": "로그인 완료",
     "manualSending": "로그인하는 중…",
-  },
+
+  "hint": "OKINTO 화면에서 로그인하면 모델과 지갑을 자동으로 불러옵니다."
+},
   "model": {
     "found": {
       "other": "연결되었습니다. 모델 {n}개를 찾았습니다"
@@ -44,4 +46,26 @@ export default {
     "start": "대화 시작",
     "startAnyway": "우선 시작하기"
   }
+,
+  "useKey": "API 키 사용",
+  "keyOnly": "서비스: https://api.okinto.com · 이 사이트의 API 키를 사용하세요",
+  "createKey": "OKINTO 콘솔에서 키 만들기 ↗",
+  "key": {
+  "label": "API 키",
+  "placeholder": "OKINTO New API 키를 붙여넣으세요",
+  "paste": "클립보드에서 붙여넣기",
+  "show": "표시",
+  "hide": "숨기기",
+  "showKey": "키 표시",
+  "hideKey": "키 숨기기",
+  "retype": "다시 입력",
+  "checkGroup": "콘솔에서 그룹 확인 ↗",
+  "useCn": "다시 연결",
+  "note": "키는 이 기기에만 저장되며 로그나 명령줄 인수에 기록되지 않습니다.",
+  "connecting": "연결 중…",
+  "submit": "OKINTO New API 연결",
+  "slow": "네트워크 연결이 느립니다.",
+  "slowLine": "네트워크가 느리면 고급 연결 설정을 확인하세요.",
+  "advanced": "고급 설정"
+}
 };

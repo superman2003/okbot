@@ -192,10 +192,10 @@ export default {
     "reply": "エラー処理も読みやすくなります。{b} を有効にすると、下の行が折り返されます。"
   },
   "logout": {
-    "title": "Modelflare からログアウトしますか？",
+    "title": "OKINTO New API からログアウトしますか？",
     "body": "このパソコンへのアクセス許可を取り消します。ボットと会話は保持され、再度ログインすると引き続き使えます。",
     "confirm": "ログアウト",
-    "notRevoked": "サーバーでの取り消しを確認できませんでした。この端末ではログアウト済みです。Modelflare の Web サイトの「認可済みアプリ」で改めてアクセス許可を取り消せます"
+    "notRevoked": "サーバーでの取り消しを確認できませんでした。この端末ではログアウト済みです。OKINTO New API の Web サイトの「認可済みアプリ」で改めてアクセス許可を取り消せます"
   },
   "notifyDenied": "通知が許可されていません。システム設定またはブラウザーのサイト設定で、このページからの通知を許可してください",
   "rows": {
@@ -295,18 +295,30 @@ export default {
       "button": "リセット"
     },
     "account": {
-      "name": "Modelflare アカウント",
+      "name": "OKINTO New API アカウント",
       "signedIn": "ログイン済み",
       "enterprise": "{name} の利用料金は組織のウォレットに請求されます",
       "signedOut": "ログインすると、利用状況、お知らせ、招待リンクを確認し、ボットごとに予算を設定できます",
       "keys": "アカウント ログイン 新規登録 ログアウト",
       "logout": "ログアウト",
       "login": "ログイン",
-    },
+
+  "apiKey": "API キーのみ",
+  "noBrowserLogin": "API キーで接続"
+},
     "connection": {
       "name": "接続",
       "subExternal": "環境変数 AMB_MAGPIE_BASE_URL で指定されたエンドポイント（開発・テスト用）",
-    },
+
+  "playground": "OKINTO アカウントで接続済み"
+,
+  "nameSignedIn": "アカウント接続",
+  "subSignedIn": "OKINTO アカウントを使用",
+  "sub": "OKINTO の API キーを使用",
+  "keys": "OKINTO API キー 接続 モデル",
+  "rekey": "API キーを変更",
+  "disconnect": "切断"
+},
     "balance": {
       "name": "残高",
       "error": "読み込めませんでした：{error}",
@@ -314,7 +326,11 @@ export default {
       "keys": "残高 チャージ ウォレット クレジット",
       "refresh": "残高を更新",
       "topUp": "チャージ ↗"
-    },
+    ,
+  "fromToken": "この API キーの残り利用枠。ウォレットはコンソールで確認できます",
+  "fromAccount": "New API アカウントのウォレット残高",
+  "fromKey": "New API の請求情報。利用枠の範囲はサイト設定によります"
+},
     "lowBalance": {
       "name": "残高低下の通知",
       "sub": "残高がこの金額を下回ると、アプリ内で一度通知します。チャージするとリセットされます",
@@ -334,7 +350,7 @@ export default {
     "notifications": {
       "name": "お知らせ",
       "unread": "未読 {count} 件",
-      "sub": "Modelflare からの通知やお知らせ",
+      "sub": "OKINTO New API からの通知やお知らせ",
       "keys": "通知 お知らせ メッセージ"
     },
     "invite": {
@@ -346,7 +362,7 @@ export default {
     "line": {
       "name": "API ドメイン",
       "sub": "ドメインを選択するか、応答時間を比較できます。変更は新しいリクエストから反映されます",
-      "keys": "ドメイン 速度 応答時間 Modelflare origin cf ネットワーク 経路"
+      "keys": "ドメイン 速度 応答時間 OKINTO New API origin cf ネットワーク 経路"
     },
     "defaultModel": {
       "name": "既定のモデル",
@@ -384,7 +400,7 @@ export default {
       }
     },
     "console": {
-      "name": "Modelflare コンソール",
+      "name": "OKINTO New API コンソール",
       "sub": "請求と請求書",
       "keys": "コンソール ダッシュボード 請求 請求書"
     },
@@ -411,7 +427,7 @@ export default {
     },
     "accountStorage": {
       "name": "アカウント認証情報",
-      "sub": "Modelflare のログイン認証情報はデータフォルダーだけに保存されます。デスクトップ版ではシステムのキーチェーンで暗号化し、画面にはアカウント名だけを渡します",
+      "sub": "OKINTO New API のログイン認証情報はデータフォルダーだけに保存されます。デスクトップ版ではシステムのキーチェーンで暗号化し、画面にはアカウント名だけを渡します",
       "keys": "セキュリティ ログイン キーチェーン 認証情報"
     },
     "token": {
@@ -491,4 +507,14 @@ export default {
       "docs": "ドキュメント ↗"
     }
   }
+,
+  "rekey": {
+  "title": "OKINTO New API キーを変更",
+  "submit": "確認して保存"
+},
+  "disconnect": {
+  "title": "OKINTO New API を切断しますか？",
+  "body": "この端末から API キーを削除します。Bot と会話は保持されます。",
+  "confirm": "切断"
+}
 };

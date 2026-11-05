@@ -54,10 +54,10 @@ export default {
   },
   error: {
     stopFailed: "Couldn't stop: {error}",
-    fixKey: "Sign in",
     fixOfficialKey: "Replace key",
     officialKeyInvalid: "{name} rejected this API key. It may be invalid or revoked.",
-    authInvalid: "Your Modelflare access has expired or been revoked. Please sign in again.",
+    fixKey: "Update key",
+    authInvalid: "Your OKINTO New API key is invalid or has been revoked.",
     loadHistory: "Couldn't load message history: {error}",
   },
   menu: {

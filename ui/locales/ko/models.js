@@ -45,4 +45,7 @@ export default {
     "reset": "초기화",
     "foot": "파레토 최적 모델 · 데이터 출처: {aa}"
   }
+,
+  "group": "모델 그룹",
+  "allGroups": "모든 그룹"
 };

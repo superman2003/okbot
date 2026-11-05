@@ -1,5 +1,9 @@
 // account · en
 export default {
+  login: {
+    title: "Sign in to OKINTO New API",
+    hint: "Signing in replaces the API key you entered.",
+  },
   usage: {
     title: "Usage",
     days: "{n} days",
@@ -12,7 +16,7 @@ export default {
     empty: "No usage in this period",
   },
   notifications: {
-    title: "Modelflare notifications",
+    title: "OKINTO New API notifications",
     empty: "No notifications",
     details: "View details ↗",
   },

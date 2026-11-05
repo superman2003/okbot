@@ -1,10 +1,11 @@
+import { spawn } from "node:child_process";
 /**
  * 首次设置向导（终端版；界面里也能完成同样的设置）：
- * 1. 连接 Modelflare：登录账户（打印登录链接，在这台电脑的浏览器里完成；SSH 远程时在别的设备上登录，再把链接贴回来）
+ * 1. 连接 OKINTO New API：粘贴 API Key
+ *    （先校验 GET /v1/models，再写入内置网关的隔离配置；key 不进命令行参数）
  * 2. 飞书 App ID / App Secret → 写入本程序数据库
  */
 import readline from "node:readline";
-import { spawn } from "node:child_process";
 import { stdin, stdout } from "node:process";
 import { loadConfig } from "../config.js";
 import { App } from "../app.js";
@@ -79,9 +80,10 @@ async function setup(app: App, rl: ReturnType<typeof lineReader>, dataDir: strin
       if (how === "key") {
         await officialKey(app, rl);
       } else if (how !== "skip") {
-        const line = normalizeLine((await rl.ask(tr("cli.askLine"))).trim().toLowerCase());
-        await app.setModelflareLine(line);
-        await loginInBrowser(app, rl, how === "remote");
+        const key = await rl.ask("OKINTO New API Key：", true);
+        const r = await app.connectModelflare(key, "auto");
+        if (!r.ok) throw new Error(r.message);
+        console.log(tr("cli.connected", { count: r.models.length }));
       }
     }
   }
@@ -111,7 +113,7 @@ async function loginInBrowser(app: App, rl: ReturnType<typeof lineReader>, remot
   const account = app.ensureAccount();
   const url = await account.startLogin();
   console.log(`\n${tr("cli.openLink")}\n${url}\n`);
-  if (remote) account.completeLoginFromLink(await rl.ask(tr("cli.askLoginLink")));
+  if (remote && "completeLoginFromLink" in account) account.completeLoginFromLink(await rl.ask(tr("cli.askLoginLink")));
   else openInBrowser(url);
   for (;;) {
     await new Promise((r) => setTimeout(r, 500));

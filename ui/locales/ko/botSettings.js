@@ -21,7 +21,7 @@ export default {
   },
   "budget": {
     "name": "예산",
-    "signedOut": "Modelflare에 로그인하면 이 봇의 지출 한도를 별도로 설정할 수 있습니다",
+    "signedOut": "OKINTO New API에 로그인하면 이 봇의 지출 한도를 별도로 설정할 수 있습니다",
     "signIn": "로그인",
     "off": "계정 잔액을 다른 봇과 공유하며 별도 한도가 없습니다",
     "on": "이 봇의 비용을 따로 계산하며 한도에 도달하면 중지합니다",
@@ -30,7 +30,9 @@ export default {
     "limit": "한도(USD)",
     "limitSub": "이미 사용한 금액을 포함합니다. 한도를 올리면 자동으로 복구됩니다.",
     "limitLabel": "예산 한도(USD)"
-  },
+  ,
+  "playground": "OKINTO 계정 잔액을 사용합니다. 봇별 한도는 지원하지 않습니다."
+},
   "perm": {
     "head": "권한",
     "name": "파일 접근",

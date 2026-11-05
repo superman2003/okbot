@@ -7,10 +7,10 @@ interface DomainSample {
 }
 
 /** Fixed public endpoints only; no credentials, model calls, redirects or config changes. */
-export async function testModelflareDomains(opts: { fetchImpl?: typeof fetch; timeoutMs?: number; now?: () => number } = {}) {
+export async function testModelflareDomains(opts: { fetchImpl?: typeof fetch; timeoutMs?: number; now?: () => number; bases?: typeof MODELFLARE_LINES } = {}) {
   const request = opts.fetchImpl ?? fetch;
   const now = opts.now ?? (() => performance.now());
-  return Promise.all(Object.entries(MODELFLARE_LINES).map(async ([line, baseUrl]) => {
+  return Promise.all(Object.entries(opts.bases ?? MODELFLARE_LINES).map(async ([line, baseUrl]) => {
     const samples: DomainSample[] = [];
     for (let i = 0; i < 3; i++) {
       const signal = AbortSignal.timeout(opts.timeoutMs ?? 5_000);

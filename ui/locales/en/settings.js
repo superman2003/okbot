@@ -3,7 +3,7 @@ export default {
   tabs: {
     general: "General",
     appearance: "Appearance",
-    modelflare: "Models",
+    modelflare: "OKINTO New API",
     computer: "Computer use",
     connections: "Connections",
     privacy: "Privacy & security",
@@ -176,11 +176,20 @@ export default {
     label: "Preview",
     reply: "Sure, and error handling gets clearer too. With {b} on, the line below wraps:",
   },
+  rekey: {
+    title: "Change OKINTO New API key",
+    submit: "Verify and save",
+  },
+  disconnect: {
+    title: "Disconnect OKINTO New API?",
+    body: "This deletes the API key from this computer. Your bots and conversations stay, ready for when you reconnect.",
+    confirm: "Disconnect",
+  },
   logout: {
-    title: "Sign out of Modelflare?",
-    body: "This revokes this computer's access. Your bots and conversations stay, and carry on when you sign in again.",
+    title: "Sign out of OKINTO New API?",
+    body: "This revokes this computer's access and deletes the API keys issued to it and your bots at sign-in. Your bots and conversations stay.",
     confirm: "Sign out",
-    notRevoked: "The server didn't confirm the revocation. You're signed out here — you can revoke access again under Authorized apps on the Modelflare website",
+    notRevoked: "The server didn't confirm the revocation. You're signed out here — you can revoke access again under Authorized apps on the OKINTO New API website",
   },
   notifyDenied: "Notifications aren't allowed. Allow them for this page in your system or browser site settings",
   rows: {
@@ -280,21 +289,34 @@ export default {
       button: "Reset",
     },
     account: {
-      name: "Modelflare account",
+      apiKey: "Connect with an API key from api.okinto.com",
+      name: "OKINTO New API account",
       signedIn: "Signed in",
       enterprise: "{name}'s usage is billed to your organization's wallet",
       signedOut: "Sign in to see usage, notifications and your invite link, and to set budgets for individual bots",
       keys: "account sign in sign up log in log out login",
       logout: "Sign out",
-      login: "Sign in",
+      noBrowserLogin: "API key connection",
+      login: "Sign in / Sign up",
     },
     connection: {
+      playground: "Use your New API playground session; requests are billed to the selected group",
       name: "Connection",
       subExternal: "Endpoint set by the AMB_MAGPIE_BASE_URL environment variable (development/testing)",
-    },
+
+  "nameSignedIn": "Account connection",
+  "subSignedIn": "Using your OKINTO account",
+  "sub": "Using an OKINTO site API key",
+  "keys": "OKINTO API key connection models",
+  "rekey": "Replace API key",
+  "disconnect": "Disconnect"
+},
     balance: {
+      fromToken: "Remaining quota for this API key; view the wallet in the console",
+      fromAccount: "New API account wallet balance",
       name: "Balance",
       error: "Couldn't load: {error}",
+      fromKey: "From New API billing; quota scope depends on site settings",
       updated: "Updated {time}",
       keys: "balance top up wallet credit",
       refresh: "Refresh balance",
@@ -319,7 +341,7 @@ export default {
     notifications: {
       name: "Notifications",
       unread: "{count} unread",
-      sub: "Notifications and announcements from Modelflare",
+      sub: "Notifications and announcements from OKINTO New API",
       keys: "notification announcement message",
     },
     invite: {
@@ -363,8 +385,8 @@ export default {
       count: { one: "{count} model", other: "{count} models" },
     },
     console: {
-      name: "Modelflare console",
-      sub: "Billing and invoices",
+      name: "OKINTO New API console",
+      sub: "Billing, invoices and API key management",
       keys: "console dashboard billing invoice",
     },
     cuStatus: {
@@ -385,12 +407,12 @@ export default {
     },
     keyStorage: {
       name: "Key storage",
-      sub: "API keys live only in the built-in gateway's isolated config on this computer, never in logs or command-line arguments",
+      sub: "Your OKINTO New API key lives only in the built-in gateway's isolated config on this computer, never in logs or command-line arguments",
       keys: "security key storage",
     },
     accountStorage: {
       name: "Account credentials",
-      sub: "Modelflare sign-in credentials are stored only in the data folder, encrypted with the system keychain on desktop. The interface only sees your account name",
+      sub: "OKINTO New API sign-in credentials are stored only in the data folder, encrypted with the system keychain on desktop. The interface only sees your account name",
       keys: "security sign in keychain credentials",
     },
     token: {

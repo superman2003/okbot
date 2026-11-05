@@ -1,8 +1,7 @@
 /**
- * Modelflare：登录账户就能用的模型来源（另一个来源是用户自己的官方 API Key，见 official-providers.ts）。
- * - 三个 API 域名：modelflare.dev、origin.modelflare.dev、cf.modelflare.dev；
- *   飞行中的 POST 不跨主机重定向，所以线路由用户事先选定，不自动切换。
- * - 连接前用 GET {base}/models + Bearer 校验密钥；错误按状态码给出可操作的说明。
+ * OKINTO New API integration. Existing modelflare provider IDs, routes and config
+ * keys remain stable so saved bots and conversations continue to work.
+ * Models, metadata and billing all come from the configured New API origin.
  */
 import { t } from "./i18n/index.js";
 
@@ -10,15 +9,15 @@ import { t } from "./i18n/index.js";
 export type ModelflareLine = "auto" | "global" | "cn" | "cf";
 
 export const MODELFLARE_LINES: Record<Exclude<ModelflareLine, "auto">, string> = {
-  global: "https://modelflare.dev/v1",
-  cn: "https://origin.modelflare.dev/v1",
-  cf: "https://cf.modelflare.dev/v1",
+  global: "https://api.okinto.com/v1",
+  cn: "https://api.okinto.com/v1",
+  cf: "https://api.okinto.com/v1",
 };
 
 export const MODELFLARE_PROVIDER = "modelflare";
 
-/** Modelflare 官网：登录、注册、充值、控制台都在这里（origin 域名只开放 /v1，不提供网页） */
-export const MODELFLARE_WEB = "https://modelflare.dev";
+/** New API console origin. */
+export const MODELFLARE_WEB = "https://api.okinto.com";
 
 /**
  * 账户登录（OIDC 授权码 + PKCE，RFC 8252 原生应用）。client_id 是公开值：本程序是公共客户端，
@@ -36,7 +35,7 @@ export const UTM = { utm_source: "anymodelbot" } as const;
 
 /** 开发/测试：AMB_MODELFLARE_ISSUER 把登录与账户接口指向本地 mock（界面无法设置） */
 export function modelflareIssuer(env: NodeJS.ProcessEnv = process.env): string {
-  return (env.AMB_MODELFLARE_ISSUER?.trim() || MODELFLARE_WEB).replace(/\/+$/, "");
+  return (env.AMB_MODELFLARE_ISSUER?.trim() || new URL(modelflareBaseUrl("auto", env)).origin).replace(/\/+$/, "");
 }
 
 /** 官网页面链接，带上来源参数 */
@@ -47,16 +46,15 @@ export function webUrl(pathname: string, campaign?: string): string {
   return u.toString();
 }
 
-export const SIGNUP_URL = webUrl("/sign-up", "amb_signup");
-export const TOPUP_URL = webUrl("/billing", "amb_topup");
-export const CONSOLE_URL = webUrl("/dashboard/overview", "amb_console");
+export const SIGNUP_URL = webUrl("/register", "amb_signup");
+export const TOPUP_URL = webUrl("/console/topup", "amb_topup");
+export const CONSOLE_URL = webUrl("/console", "amb_console");
 
 /**
- * 调用归因：每个经 Modelflare 的请求都带 X-Modelflare-Skill（Modelflare 只记到用量日志，
- * 用来统计各集成的调用量）。版本必须是纯数字的 1–3 段。
+ * Integration version header. Versions must contain 1–3 numeric segments.
  */
 export function skillHeader(version: string): Record<string, string> {
-  return /^\d{1,4}(\.\d{1,4}){0,2}$/.test(version) ? { "X-Modelflare-Skill": `anymodel-bot/${version}` } : {};
+  return /^\d{1,4}(\.\d{1,4}){0,2}$/.test(version) ? { "X-AnyModelBot-Version": version } : {};
 }
 
 /** 每个开启了预算的机器人有自己的内置网关 provider（自己的 API Key） */
@@ -91,9 +89,12 @@ export function normalizeLine(v: unknown): ModelflareLine {
 
 /** 线路 → 基址。AMB_MODELFLARE_BASE_URL 仅供开发/测试（指向本地 mock），不经界面设置。 */
 export function modelflareBaseUrl(line: ModelflareLine, env: NodeJS.ProcessEnv = process.env): string {
-  const override = env.AMB_MODELFLARE_BASE_URL?.trim();
-  if (override) return override.replace(/\/+$/, "");
-  return MODELFLARE_LINES[line === "auto" ? "global" : line];
+  const override = env.AMB_NEWAPI_BASE_URL?.trim() || env.AMB_MODELFLARE_BASE_URL?.trim();
+  if (override) {
+    const base = override.replace(/\/+$/, "");
+    return base.endsWith("/v1") ? base : `${base}/v1`;
+  }
+  return line === "cn" ? MODELFLARE_LINES.cn : MODELFLARE_LINES.global;
 }
 
 /**
@@ -139,6 +140,7 @@ export async function verifyModelflareKey(
       ok: false,
       code: "network",
       message: t("modelflare.unreachable", { host, reason: (e as Error).name === "TimeoutError" ? t("modelflare.timeout") : (e as Error).message }),
+
     };
   }
   if (res.status === 401) return { ok: false, code: "invalid_key", status: 401, message: t("modelflare.invalid_key") };
@@ -149,11 +151,25 @@ export async function verifyModelflareKey(
     const body = (await res.json()) as { data?: Array<{ id?: unknown; kind?: unknown }> };
     if (!Array.isArray(body.data)) throw new Error("no data[]");
     const rows = body.data.map((m) => ({ id: String(m.id ?? ""), kind: typeof m.kind === "string" ? m.kind : "" })).filter((m) => m.id);
+    // New API usually omits kind. Its public catalog identifies endpoints that are media-only.
+    const media = new Set<string>();
+    if (!rows.some((m) => m.kind)) {
+      try {
+        const pricing = await f(`${new URL(baseUrl).origin}/api/pricing`, { signal: AbortSignal.timeout(opts.timeoutMs ?? 10_000) });
+        if (pricing.ok) {
+          const catalog = await pricing.json() as { data?: Array<{ model_name: string; supported_endpoint_types?: string[] }> };
+          for (const e of Array.isArray(catalog.data) ? catalog.data : []) {
+            const endpoints = e.supported_endpoint_types ?? [];
+            if (endpoints.length && endpoints.every((v) => /image|video|audio|embedding|rerank/i.test(v))) media.add(e.model_name);
+          }
+        }
+      } catch { /* The authorized model list remains usable when pricing is unavailable. */ }
+    }
     const classified = rows.some((m) => m.kind);
     return {
       ok: true,
       models: rows.map((m) => m.id).sort(),
-      chatModels: rows.filter((m) => !classified || m.kind === "text").map((m) => m.id).sort(),
+      chatModels: rows.filter((m) => (!classified || m.kind === "text") && !media.has(m.id)).map((m) => m.id).sort(),
     };
   } catch {
     return { ok: false, code: "bad_response", status: res.status, message: t("modelflare.bad_models") };
@@ -176,4 +192,55 @@ function safeHost(url: string): string {
 /** 只用于展示的密钥尾号 */
 export function keyTail(key: string): string {
   return key.length > 4 ? key.slice(-4) : "";
+}
+
+export interface KeyBalance {
+  available: number | null;
+  used: number;
+  unit: string;
+  scope?: "account" | "token" | "billing";
+  unlimited?: boolean;
+}
+
+/** New API: billing totals use currency units; total_usage uses cents. */
+export async function fetchKeyBalance(baseUrl: string, apiKey: string, fetchImpl: typeof fetch = fetch): Promise<KeyBalance> {
+  const origin = new URL(baseUrl).origin;
+  const headers = { Authorization: `Bearer ${apiKey}`, Accept: "application/json" };
+  const get = async (url: string, auth = true): Promise<any> => {
+    const res = await fetchImpl(url, { headers: auth ? headers : { Accept: "application/json" }, signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) throw new Error(t("modelflare.balance_failed", { status: res.status }));
+    const body = await res.json() as any;
+    if (body.error || body.success === false || body.code === false) throw new Error(t("modelflare.bad_balance"));
+    return body;
+  };
+  const numeric = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+  const [subscription, usage, status] = await Promise.allSettled([
+    get(`${baseUrl}/dashboard/billing/subscription`),
+    get(`${baseUrl}/dashboard/billing/usage`),
+    get(`${origin}/api/status`, false),
+  ]);
+  const site = status.status === "fulfilled" ? status.value.data : undefined;
+  const unit = typeof site?.quota_display_type === "string" ? site.quota_display_type : "USD";
+  if (subscription.status === "fulfilled" && usage.status === "fulfilled") {
+    const limit = subscription.value.hard_limit_usd;
+    const spent = usage.value.total_usage;
+    if (numeric(limit) && numeric(spent) && limit >= 0 && spent >= 0) {
+      const unlimited = limit === 100000000; // New API's unlimited-token billing sentinel.
+      return { available: unlimited ? null : limit - spent / 100, used: spent / 100, unit, scope: "billing", unlimited };
+    }
+  }
+  // Some deployments disable compatibility billing but allow read-only token usage.
+  const token = (await get(`${origin}/api/usage/token`)).data;
+  const wallet = token?.user_quota ?? token;
+  const quotaPerUnit = site?.quota_per_unit;
+  if (!numeric(quotaPerUnit) || quotaPerUnit <= 0 || !numeric(wallet?.total_available) || !numeric(wallet?.total_used)) {
+    throw new Error(t("modelflare.bad_balance"));
+  }
+  const unlimited = !token.user_quota && token.unlimited_quota === true;
+  return {
+    available: unlimited ? null : wallet.total_available / quotaPerUnit,
+    used: wallet.total_used / quotaPerUnit,
+    // Raw quotas are converted to USD regardless of the site's display currency.
+    unit: "USD", scope: token.user_quota ? "account" : "token", unlimited,
+  };
 }

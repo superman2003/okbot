@@ -1,5 +1,7 @@
 // models · en: model picker (components/model-picker.js)
 export default {
+  group: "Group",
+  allGroups: "All available groups",
   otherFamily: "Other",
   caps: {
     vision: "Vision",

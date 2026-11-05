@@ -18,7 +18,9 @@ if (process.platform === "linux" && !process.env.DISPLAY) {
   args = ["-a", "-s", "-screen 0 1400x900x24", cmd, ...args, "--disable-gpu"];
   cmd = "xvfb-run";
 }
-const r = spawnSync(cmd, args, { env: { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot }, encoding: "utf8", timeout: 120_000 });
+const childEnv = { ...process.env, AMB_DATA_DIR: dataDir, AMB_UI_PORT: "0", AMB_ELECTRON_SMOKE: shot };
+delete childEnv.ELECTRON_RUN_AS_NODE;
+const r = spawnSync(cmd, args, { env: childEnv, encoding: "utf8", timeout: 120_000 });
 const out = (r.stdout || "") + (r.stderr || "");
 const line = out.split("\n").find((l) => l.startsWith("SMOKE "));
 if (!line) {
@@ -27,5 +29,5 @@ if (!line) {
 }
 const res = JSON.parse(line.slice(6));
 console.log(res, "截图：", shot);
-const ok = res.hasUi && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
+const ok = res.hasUi && res.product === "okbot" && res.title === "okbot" && res.windowTitle === "okbot" && res.status === 200 && res.magpie === 404 && res.magpieState === "running" && fs.existsSync(shot);
 process.exit(ok ? 0 : 1);

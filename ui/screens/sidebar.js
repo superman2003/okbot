@@ -15,7 +15,7 @@ import { useListPresence } from "../design/motion.js";
 import { newBotDraft } from "./new-bot.js";
 import { prefs, setPrefs } from "../lib/prefs.js";
 import { fmtAgo } from "../lib/format.js";
-import { MF_TOPUP, usd } from "../lib/links.js";
+import { MF_TOPUP, usd, accountBalance } from "../lib/links.js";
 import { t, useLang } from "../lib/i18n.js";
 import { NeedsRow } from "./needs-you.js";
 import { catalogFold, catalogSeen, latestOf, setCatalogFold, tr } from "../lib/catalog.js";
@@ -40,7 +40,7 @@ export function AccountButton({ username, account, settingsOn, onSettings, onMod
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const me = ((account && account.state === "signed_in" && account.name) || username || t("sidebar.localUser")).trim();
-  const bal = account && account.balanceUsd !== null && account.balanceUsd !== undefined ? usd(account.balanceUsd) : "";
+  const bal = account && (account.unlimitedBalance || account.balanceUsd !== null && account.balanceUsd !== undefined) ? accountBalance(account) : "";
   return html`<button type="button" class=${`account${open ? " on" : ""}`} ref=${ref}
       aria-label=${bal ? t("sidebar.account") : t("sidebar.openSettings")} aria-haspopup=${bal ? "dialog" : undefined} aria-expanded=${bal ? open : undefined}
       onClick=${bal ? () => setOpen((v) => !v) : onSettings}>
@@ -140,7 +140,7 @@ export function Sidebar({ bots, botsError, reloadBots, selectedId, view, preview
 
   return html`<aside class="side" ref=${root} aria-label=${t("sidebar.bots")}>
     <div class="side-top">
-      <span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>AnyModelBot</span></span>
+      <span class="side-brand"><img src="/amb/static/assets/favicon-64.png" alt="" /><span>okbot</span></span>
       <${IconButton} icon="plus" iconSize="md" label=${canGroup ? t("sidebar.newMenu") : t("sidebar.newShortcut")} on=${view === "new"} aria-haspopup=${canGroup ? "menu" : undefined} aria-expanded=${canGroup ? !!newMenu : undefined}
         onClick=${(e) => { if (!canGroup) return onNew(); const el = e.currentTarget; setNewMenu((m) => (m ? null : el)); }} />
     </div>

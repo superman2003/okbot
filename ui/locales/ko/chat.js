@@ -56,7 +56,7 @@ export default {
     "fixKey": "로그인",
     "fixOfficialKey": "키 변경",
     "officialKeyInvalid": "{name}에서 이 API 키를 거부했습니다. 유효하지 않거나 취소되었을 수 있습니다.",
-    "authInvalid": "Modelflare 접근 권한이 만료되었거나 취소되었습니다. 다시 로그인하세요.",
+    "authInvalid": "OKINTO New API 접근 권한이 만료되었거나 취소되었습니다. 다시 로그인하세요.",
     "loadHistory": "메시지 기록을 불러오지 못했습니다: {error}"
   },
   "menu": {

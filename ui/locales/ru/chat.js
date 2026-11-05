@@ -59,7 +59,7 @@ export default {
     fixKey: "Войти",
     fixOfficialKey: "Сменить ключ",
     officialKeyInvalid: "{name} отклонил этот API-ключ. Возможно, он недействителен или отозван.",
-    authInvalid: "Доступ к Modelflare истёк или отозван. Войдите снова.",
+    authInvalid: "Доступ к OKINTO New API истёк или отозван. Войдите снова.",
     loadHistory: "Не удалось загрузить историю сообщений: {error}",
   },
   menu: {

@@ -21,8 +21,13 @@ export default {
     empty: "За этот период нет данных об использовании",
   },
   notifications: {
-    title: "Уведомления Modelflare",
+    title: "Уведомления OKINTO New API",
     empty: "Нет уведомлений",
     details: "Подробнее ↗",
   },
+
+  "login": {
+  "title": "Войти в OKINTO New API",
+  "hint": "Вход заменит текущее подключение по API-ключу."
+}
 };

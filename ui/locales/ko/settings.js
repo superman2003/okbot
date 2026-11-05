@@ -192,10 +192,10 @@ export default {
     "reply": "좋아요. 오류 처리도 더 명확해집니다. {b}을(를) 켜면 아래 줄이 자동으로 줄바꿈됩니다:"
   },
   "logout": {
-    "title": "Modelflare에서 로그아웃할까요?",
+    "title": "OKINTO New API에서 로그아웃할까요?",
     "body": "이 컴퓨터의 접근 권한을 취소합니다. 봇과 대화는 유지되며 다시 로그인하면 계속 사용할 수 있습니다.",
     "confirm": "로그아웃",
-    "notRevoked": "서버에서 권한 취소를 확인하지 못했습니다. 이 기기에서는 로그아웃했습니다. Modelflare 웹사이트의 인증된 앱 메뉴에서 접근 권한을 다시 취소할 수 있습니다"
+    "notRevoked": "서버에서 권한 취소를 확인하지 못했습니다. 이 기기에서는 로그아웃했습니다. OKINTO New API 웹사이트의 인증된 앱 메뉴에서 접근 권한을 다시 취소할 수 있습니다"
   },
   "notifyDenied": "알림이 허용되지 않았습니다. 시스템 또는 브라우저 사이트 설정에서 이 페이지의 알림을 허용하세요",
   "rows": {
@@ -295,18 +295,30 @@ export default {
       "button": "초기화"
     },
     "account": {
-      "name": "Modelflare 계정",
+      "name": "OKINTO New API 계정",
       "signedIn": "로그인됨",
       "enterprise": "{name}의 사용량은 조직 지갑에 청구됩니다",
       "signedOut": "로그인하면 사용량, 알림, 초대 링크를 확인하고 봇별 예산을 설정할 수 있습니다",
       "keys": "계정 로그인 회원가입 로그아웃",
       "logout": "로그아웃",
       "login": "로그인",
-    },
+
+  "apiKey": "API 키만 사용",
+  "noBrowserLogin": "API 키로 연결"
+},
     "connection": {
       "name": "연결",
       "subExternal": "AMB_MAGPIE_BASE_URL 환경 변수로 지정한 엔드포인트입니다(개발/테스트용)",
-    },
+
+  "playground": "OKINTO 계정으로 연결됨"
+,
+  "nameSignedIn": "계정 연결",
+  "subSignedIn": "OKINTO 계정 사용 중",
+  "sub": "OKINTO API 키 사용",
+  "keys": "OKINTO API 키 연결 모델",
+  "rekey": "API 키 변경",
+  "disconnect": "연결 해제"
+},
     "balance": {
       "name": "잔액",
       "error": "불러오지 못했습니다: {error}",
@@ -314,7 +326,11 @@ export default {
       "keys": "잔액 충전 지갑 크레딧",
       "refresh": "잔액 새로고침",
       "topUp": "충전 ↗"
-    },
+    ,
+  "fromToken": "이 API 키의 남은 한도. 지갑은 콘솔에서 확인하세요",
+  "fromAccount": "New API 계정 지갑 잔액",
+  "fromKey": "New API 결제 정보. 한도 범위는 사이트 설정에 따릅니다"
+},
     "lowBalance": {
       "name": "잔액 부족 알림",
       "sub": "잔액이 이 금액 아래로 내려가면 앱에서 한 번 알립니다. 충전하면 알림이 초기화됩니다",
@@ -334,7 +350,7 @@ export default {
     "notifications": {
       "name": "알림",
       "unread": "읽지 않음 {count}개",
-      "sub": "Modelflare의 알림과 공지",
+      "sub": "OKINTO New API의 알림과 공지",
       "keys": "알림 공지 메시지"
     },
     "invite": {
@@ -384,7 +400,7 @@ export default {
       }
     },
     "console": {
-      "name": "Modelflare 콘솔",
+      "name": "OKINTO New API 콘솔",
       "sub": "청구 및 청구서",
       "keys": "콘솔 대시보드 청구 청구서"
     },
@@ -411,7 +427,7 @@ export default {
     },
     "accountStorage": {
       "name": "계정 인증 정보",
-      "sub": "Modelflare 로그인 정보는 데이터 폴더에만 저장되며 데스크톱에서는 시스템 키체인으로 암호화합니다. 화면에는 계정 이름만 전달됩니다",
+      "sub": "OKINTO New API 로그인 정보는 데이터 폴더에만 저장되며 데스크톱에서는 시스템 키체인으로 암호화합니다. 화면에는 계정 이름만 전달됩니다",
       "keys": "보안 로그인 키체인 인증 정보"
     },
     "token": {
@@ -491,4 +507,14 @@ export default {
       "docs": "문서 ↗"
     }
   }
+,
+  "rekey": {
+  "title": "OKINTO New API 키 변경",
+  "submit": "확인 후 저장"
+},
+  "disconnect": {
+  "title": "OKINTO New API 연결을 해제할까요?",
+  "body": "이 기기에서 API 키를 삭제합니다. 봇과 대화는 유지됩니다.",
+  "confirm": "연결 해제"
+}
 };

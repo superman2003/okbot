@@ -45,4 +45,7 @@ export default {
     "reset": "リセット",
     "foot": "パレート最適なモデル。データ提供：{aa}"
   }
+,
+  "group": "モデルグループ",
+  "allGroups": "すべてのグループ"
 };

@@ -13,6 +13,7 @@ import { logFilePath, logger, readLogTail, registerSecret } from "../log.js";
 import { diagnosticsReport, safeStatus, testAgent, testModel } from "../diagnostics.js";
 import { REASONING_EFFORTS, ZOOMS, normalizeLowBalance, saveConfigFile } from "../config.js";
 import { ApiError, ROUTING_STRATEGIES } from "../account/client.js";
+import { NewApiAccountManager } from "../account/newapi.js";
 import { OAuthError } from "../account/oauth.js";
 import { normalizeLine } from "../modelflare.js";
 import { officialProvider } from "../official-providers.js";
@@ -389,13 +390,38 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
     if (p === "/update" && m === "GET") return send(res, 200, app.updates.status());
     if (p === "/models" && m === "GET") {
       try {
-        return send(res, 200, { models: await app.runtime.listModels(true) });
+        if (app.account instanceof NewApiAccountManager && app.account.active) await app.account.groupList();
+        const models = await app.runtime.listModels(true);
+        if (app.account instanceof NewApiAccountManager && app.account.active) {
+          const provider = app.magpie?.modelflareProviderId;
+          return send(res, 200, { models: models.map((model) => provider && model.startsWith(`${provider}/`) ? model.slice(provider.length + 1) : model) });
+        }
+        return send(res, 200, { models });
       } catch (e) {
         return send(res, 200, { models: [], error: (e as Error).message });
       }
     }
     if (p === "/modelflare/domains/test" && m === "POST") return send(res, 200, { results: await testModelflareDomains() });
-    if (p === "/modelflare" && m === "GET") return send(res, 200, app.modelflareStatus());
+    if (p === "/modelflare" || p === "/modelflare/line") {
+      if (m === "GET" && p === "/modelflare") return send(res, 200, app.modelflareStatus());
+      if (m !== "GET" && !app.magpie) throw new HttpError(409, t("web.externalNoConnection"));
+    }
+    if (p === "/modelflare") {
+      if (m === "PUT") {
+        const b = await readJson(req);
+        const apiKey = String(b.apiKey ?? "").trim();
+        if (!apiKey) throw new HttpError(400, t("web.missingApiKey"));
+        const r = await app.connectModelflare(apiKey, normalizeLine(b.line ?? cfg.modelflare.line));
+        if (!r.ok) return send(res, 400, { error: r.message, code: r.code, status: r.status });
+        return send(res, 200, { ...app.modelflareStatus(), models: r.chatModels });
+      }
+      if (m === "DELETE") {
+        // 登录状态下断开 = 退出登录：先撤销授权，服务端会删除本机签发的 Key
+        if (app.account.signedIn) await app.account.logout();
+        else await app.disconnectModelflare();
+        return send(res, 200, app.modelflareStatus());
+      }
+    }
     if (p === "/modelflare/line" && m === "PUT") {
       if (!app.magpie) throw new HttpError(409, t("web.externalNoConnection"));
       const b = await readJson(req);
@@ -431,9 +457,10 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
       const sub = seg.slice(1).join("/");
       if (m !== "GET" && !app.magpie) throw new HttpError(409, t("web.externalNoAccount"));
       // 浏览器登录的回调落在本程序所在机器的 127.0.0.1；界面监听在非本机地址（Docker、远程部署）时，
-      // 用户的浏览器回不到它：登录后把地址栏里的链接贴回来
-      const manualLogin = !isLoopback(host);
-      const status = () => ({ ...app.account.status(), manualLogin });
+      const manualLogin = !isLoopback(host) && !(app.account instanceof NewApiAccountManager);
+      // 用户的浏览器访问不到它，只能粘贴 API Key
+      const loginAvailable = isLoopback(host) && (!!process.env.AMB_MODELFLARE_ISSUER || !!app.desktop?.newapi);
+      const status = () => ({ ...app.account.status(), manualLogin, loginAvailable });
       if (sub === "" && m === "GET") return send(res, 200, status());
       if (sub === "refresh" && m === "POST") {
         // 切回窗口时界面会来刷新；20 秒内刚读过就直接返回
@@ -441,13 +468,15 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         return send(res, 200, status());
       }
       if (sub === "login" && m === "POST") {
+        if (!loginAvailable && !manualLogin) throw new HttpError(409, t("web.noBrowserLogin"));
         const loginUrl = await accountCall(() => app.account.startLogin());
-        app.desktop?.openExternal(loginUrl);
+        if (!(app.account instanceof NewApiAccountManager)) app.desktop?.openExternal(loginUrl);
         return send(res, 200, { ...status(), loginUrl, opened: !!app.desktop });
       }
       if (sub === "login/complete" && m === "POST") {
         const b = await readJson(req);
-        await accountCall(async () => app.account.completeLoginFromLink(String(b.link ?? "")));
+        if (!(app.account instanceof NewApiAccountManager)) await accountCall(async () => (app.account as import("../account/manager.js").AccountManager).completeLoginFromLink(String(b.link ?? "")));
+        else throw new HttpError(409, t("web.noBrowserLogin"));
         return send(res, 200, status());
       }
       if (sub === "login/cancel" && m === "POST") {
@@ -470,6 +499,9 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         saveConfigFile(cfg.dataDir, (f) => (f.modelflare = { ...(f.modelflare ?? {}), lowBalanceUsd: mf.lowBalanceUsd, lowBalancePush: mf.lowBalancePush }));
         return send(res, 200, status());
       }
+      if (sub === "groups" && m === "GET") {
+        return send(res, 200, { groups: app.account instanceof NewApiAccountManager ? await app.account.groupList(url.searchParams.get("refresh") === "1") : [] });
+      }
       if (sub === "usage" && m === "GET") {
         // Modelflare 一次最多给 30 天的用量
         const days = Math.min(30, Math.max(1, Math.floor(Number(url.searchParams.get("days") || 7)) || 7));
@@ -482,7 +514,9 @@ export async function startWebServer(app: App, opts: { port?: number; host?: str
         const b = await readJson(req);
         const strategy = ROUTING_STRATEGIES.find((x) => x === b.strategy);
         if (!strategy) throw new HttpError(400, t("account.routing_invalid"));
-        await accountCall(() => app.account.setRoutingStrategy(strategy));
+        const account = app.account;
+        if (account instanceof NewApiAccountManager) throw new HttpError(400, t("account.routing_invalid"));
+        await accountCall(() => account.setRoutingStrategy(strategy));
         return send(res, 200, status());
       }
     }

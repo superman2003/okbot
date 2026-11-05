@@ -25,15 +25,15 @@ describe("UTM 来源参数", () => {
       expect(p.utm_campaign).toMatch(/^amb_[a-z_]+$/);
       expect(p).not.toHaveProperty("utm_medium");
     }
-    expect(MF_SIGNUP).toBe("https://modelflare.dev/sign-up?utm_source=anymodelbot&utm_campaign=amb_signup");
-    expect(new URL(MF_DOCS_LINK).origin).toBe("https://docs.modelflare.dev");
+    expect(MF_SIGNUP).toBe("https://api.okinto.com/register?utm_source=anymodelbot&utm_campaign=amb_signup");
+    expect(new URL(MF_DOCS_LINK).origin).toBe("https://docs.newapi.pro");
     expect(params(mfLink("/pricing", "amb_pricing"))).toEqual({ utm_source: "anymodelbot", utm_campaign: "amb_pricing" });
   });
 
   it("服务端下发的链接：Modelflare 的页面补上参数，已带参数或别的网站不动", () => {
-    expect(params(tagLink("https://modelflare.dev/blog/x", "amb_notice"))).toEqual({ utm_source: "anymodelbot", utm_campaign: "amb_notice" });
-    expect(params(tagLink("https://docs.modelflare.dev/guides", "amb_notice")).utm_campaign).toBe("amb_notice");
-    expect(tagLink("https://modelflare.dev/x?utm_source=mail&utm_campaign=promo", "amb_notice")).toBe("https://modelflare.dev/x?utm_source=mail&utm_campaign=promo");
+    expect(params(tagLink("https://api.okinto.com/blog/x", "amb_notice"))).toEqual({ utm_source: "anymodelbot", utm_campaign: "amb_notice" });
+    expect(params(tagLink("https://docs.newapi.pro/guides", "amb_notice")).utm_campaign).toBe("amb_notice");
+    expect(tagLink("https://api.okinto.com/x?utm_source=mail&utm_campaign=promo", "amb_notice")).toBe("https://api.okinto.com/x?utm_source=mail&utm_campaign=promo");
     expect(tagLink("https://example.com/a", "amb_notice")).toBe("https://example.com/a");
     expect(tagLink("https://evilmodelflare.dev/a", "amb_notice")).toBe("https://evilmodelflare.dev/a");
   });

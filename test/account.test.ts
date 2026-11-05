@@ -12,7 +12,7 @@ import { discover, startLogin, pkcePair } from "../src/account/oauth.js";
 import { AccountManager, summarizeUsage, type AccountHooks } from "../src/account/manager.js";
 import { AccountVault } from "../src/account/vault.js";
 import { loadModelInfo, referencePrice } from "../src/account/model-info.js";
-import { MediaService, docSection, estimateUsd, type MediaModel } from "../src/agent/media.js";
+import { MediaService, docSection, estimateUsd, pickDefault, type MediaModel } from "../src/agent/media.js";
 import { AgentManager, MEDIA_ASK_USD, mediaAsk } from "../src/agent/manager.js";
 import { normalizeSettings } from "../src/agent/settings.js";
 import { locateDshRuntime } from "../src/agent/host.js";
@@ -149,7 +149,7 @@ describe("AccountManager", () => {
   it("登录后签发本机 Key 并接到内置网关；refresh token 只存在 600 权限的账户文件里", async () => {
     await signIn();
     expect(calls).toEqual(["connect:sk-key-1"]);
-    expect(mf.s.keys[0].name).toBe("AnyModelBot · test-pc");
+    expect(mf.s.keys[0].name).toBe("okbot · test-pc");
     const st = manager.status();
     expect(st).toMatchObject({ state: "signed_in", name: "Ada", source: "account", balanceUsd: 12.5 });
     expect(JSON.stringify(st)).not.toMatch(/rt-|at-/);
@@ -205,7 +205,7 @@ describe("AccountManager", () => {
     await signIn();
     await manager.setBotBudget("b1", "写作助手", { enabled: true, limitUsd: 5 });
     expect(calls).toContain("bot:b1:sk-key-2");
-    expect(mf.s.keys.find((k) => k.id === 2)).toMatchObject({ name: "AnyModelBot · 写作助手", limit_usd: 5 });
+    expect(mf.s.keys.find((k) => k.id === 2)).toMatchObject({ name: "okbot · 写作助手", limit_usd: 5 });
     await manager.setBotBudget("b1", "写作助手", { enabled: true, limitUsd: 8 });
     expect(mf.s.keys).toHaveLength(2);
     expect(mf.s.keys.find((k) => k.id === 2)!.limit_usd).toBe(8);
@@ -252,7 +252,7 @@ describe("AccountManager", () => {
     mf.s.keys = [];
     expect(await manager.repairKeys()).toBe(true);
     expect(calls).toEqual(["connect:sk-key-1", "connect:sk-key-2"]);
-    expect(mf.s.keys).toMatchObject([{ id: 2, name: "AnyModelBot · test-pc" }]);
+    expect(mf.s.keys).toMatchObject([{ id: 2, name: "okbot · test-pc" }]);
     expect(AccountVault.at(dir).load()!.deviceKeyId).toBe(2);
     expect(alerts.filter((a) => a.includes("已自动重新签发"))).toHaveLength(1);
     // 刚换过：maxAgeMs 内再问得到“换过了”（失败的请求可以重试），过后重新核对，没再换
@@ -293,7 +293,7 @@ describe("AccountManager", () => {
     expect(await manager.repairKeys()).toBe(true);
     expect(calls).toContain("bot:b1:sk-key-4");
     expect(calls).toContain("unbot:b2");
-    expect(mf.s.keys.find((k) => k.id === 4)).toMatchObject({ name: "AnyModelBot · 写作助手", limit_usd: 5 });
+    expect(mf.s.keys.find((k) => k.id === 4)).toMatchObject({ name: "okbot · 写作助手", limit_usd: 5 });
     expect(alerts.filter((a) => a.includes("写作助手") && a.includes("$5"))).toHaveLength(1);
     expect(await manager.botBudgets()).toMatchObject({ b1: { limit_usd: 5 } });
     expect(Object.keys(await manager.botBudgets())).toEqual(["b1"]);
@@ -319,7 +319,7 @@ describe("AccountManager", () => {
   it("性价比：登录签发的 Key 带着均衡；Modelflare 回显了才算支持，核对时不再重复改", async () => {
     mf.s.routing = "echo";
     await signIn();
-    expect(posts()).toMatchObject([{ body: { name: "AnyModelBot · test-pc", routing_strategy: "balanced" } }]);
+    expect(posts()).toMatchObject([{ body: { name: "okbot · test-pc", routing_strategy: "balanced" } }]);
     expect(manager.status().keyQuality).toEqual({ strategy: "balanced", supported: true });
     await manager.repairKeys();
     expect(patches()).toEqual([]);
@@ -453,7 +453,7 @@ describe("模型路由与归因", () => {
   });
 
   it("归因头只接受纯数字版本号", () => {
-    expect(skillHeader("0.1.3")).toEqual({ "X-Modelflare-Skill": "anymodel-bot/0.1.3" });
+    expect(skillHeader("0.1.3")).toEqual({ "X-AnyModelBot-Version": "0.1.3" });
     expect(skillHeader("0.1.3-beta")).toEqual({});
   });
 });
@@ -527,13 +527,23 @@ describe("模型资料", () => {
 });
 
 describe("生图 / 生视频", () => {
+  it("图片自动优先 gpt-image-2.5，保留手动选择并跳过必须带参考图的模型", () => {
+    const image = (id: string, requiresReference = false): MediaModel => ({ id, kind: "image", route: "images", requiresReference, price: "", priority: 1 });
+    const list = [image("other"), image("gpt-image-2.5")];
+    expect(pickDefault(list, "")?.id).toBe("gpt-image-2.5");
+    expect(pickDefault(list, "other")?.id).toBe("other");
+    expect(pickDefault(list, "removed")?.id).toBe("gpt-image-2.5");
+    expect(pickDefault([image("gpt-image-2.5", true), image("fallback")], "")?.id).toBe("fallback");
+    expect(pickDefault([], "")).toBeUndefined();
+  });
+
   const png = Buffer.from("89504e470d0a1a0a", "hex");
   it("用机器人的 Key 调 Images API，图片存进工作区 media/；视频建任务、轮询、下载", async () => {
     const seen: Array<{ path: string; auth?: string; skill?: string }> = [];
     let polls = 0;
     const srv = await listen(async (req, res) => {
       const u = new URL(req.url!, "http://x");
-      seen.push({ path: u.pathname + u.search, auth: req.headers.authorization, skill: req.headers["x-modelflare-skill"] as string });
+      seen.push({ path: u.pathname + u.search, auth: req.headers.authorization, skill: req.headers["x-anymodelbot-version"] as string });
       const json = (o: unknown) => res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(o));
       if (u.pathname === "/v1/models") {
         return json({ data: u.searchParams.get("kind") === "image" ? [{ id: "gemini-img", kind: "image", image_route: "gemini-generate-content" }, { id: "gpt-image", kind: "image", image_route: "images" }] : [{ id: "veo", kind: "video" }] });
@@ -556,7 +566,7 @@ describe("生图 / 生视频", () => {
       expect(text).toContain("present");
       const vtext = await media.run("b1", "video", { prompt: "海浪" });
       expect(fs.readFileSync(path.join(ws, vtext.match(/media\/video-[\w-]+\.mp4/)![0]), "utf8")).toBe("mp4");
-      expect(seen.every((x) => x.auth === "Bearer sk-bot" && x.skill === "anymodel-bot/0.1.3")).toBe(true);
+      expect(seen.every((x) => x.auth === "Bearer sk-bot" && x.skill === "0.1.3")).toBe(true);
       await expect(media.run("b2", "image", { prompt: "x" })).rejects.toThrow(/还没有连接/);
       await expect(media.run("b1", "image", { prompt: "x", model: "nope" })).rejects.toThrow(/没有这个模型/);
     } finally {

@@ -36,6 +36,7 @@ import {
   bareModel,
   botProviderId,
   modelflareBaseUrl,
+  fetchKeyBalance,
   modelflareIssuer,
   routeModel,
   skillHeader,
@@ -44,7 +45,9 @@ import {
   type VerifyResult,
 } from "./modelflare.js";
 import { OFFICIAL_PROVIDERS, officialFailure, officialModelName, officialOf, officialPicks, officialProvider, officialProviderId, type OfficialFailure, type OfficialProvider } from "./official-providers.js";
-import { AccountManager } from "./account/manager.js";
+import { AccountManager, type AccountHooks } from "./account/manager.js";
+import { NewApiAccountManager } from "./account/newapi.js";
+import { parsePlaygroundModel, type NewApiDesktop } from "./account/newapi-types.js";
 import { AccountVault, type SecretBox } from "./account/vault.js";
 import { gatewayModelInfo, loadModelInfo, type ModelInfo, type Rates } from "./account/model-info.js";
 import { loadQualitySnapshot } from "./account/model-quality.js";
@@ -80,6 +83,7 @@ export interface DesktopHooks {
   openExternal(url: string): void;
   /** 系统钥匙串加密（Electron safeStorage）；不可用时缺省，账户凭据改靠文件权限保护 */
   secretBox?: SecretBox;
+  newapi?: NewApiDesktop;
   /** 走 Chromium 网络栈的 fetch（Electron net.fetch：系统代理、系统证书）；下载内置 PowerShell 用，缺省时用 Node 的 fetch */
   fetch?: typeof fetch;
   /** 系统给这个地址用的代理（Electron resolveProxy：系统设置和 PAC），PAC 写法，如 "PROXY 127.0.0.1:7890" 或 "DIRECT" */
@@ -194,7 +198,7 @@ export class App {
   private catalogSweep: NodeJS.Timeout | undefined;
   desktop: DesktopHooks | undefined;
   /** Modelflare 账户（登录、余额、预算）；start() 时创建，桌面外壳的钥匙串那时已就绪 */
-  account!: AccountManager;
+  account!: AccountManager | NewApiAccountManager;
   /** 故障排查页最近一次"测试模型 / 测试代理"的结果（复制诊断信息时带上） */
   lastDiagnostics: { model?: import("./diagnostics.js").ModelTestResult; agent?: import("./diagnostics.js").AgentTestResult } = {};
   private notices: Array<{ at: number; level: "info" | "warn"; text: string }> = [];
@@ -215,7 +219,7 @@ export class App {
     if (opts.fileLog !== false) initFileLog(path.join(config.dataDir, "logs"));
     registerSecret(config.ui.token);
     registerSecret(config.magpie.externalApiKey);
-    log.info(`anymodel bot ${appVersion()} starting`, {
+    log.info(`okbot ${appVersion()} starting`, {
       platform: process.platform,
       arch: process.arch,
       os: os.release(),
@@ -295,12 +299,14 @@ export class App {
         ),
       media: this.magpie
         ? new MediaService({
-            baseUrl: () => modelflareBaseUrl(this.config.modelflare.line),
-            keyFor: (botId) => this.botKey(botId),
+            baseUrl: () => this.account instanceof NewApiAccountManager && this.account.active ? this.account.baseUrl : modelflareBaseUrl(this.config.modelflare.line),
+            geminiBaseUrl: () => (this.account instanceof NewApiAccountManager && this.account.active ? this.account.baseUrl : modelflareBaseUrl(this.config.modelflare.line)).replace(/\/v1\/?$/, "/v1beta"),
+            keyFor: (botId) => this.account instanceof NewApiAccountManager && this.account.active ? this.account.mediaKey : this.botKey(botId),
             headers: () => this.requestHeaders(),
             workspace: (botId) => path.join(config.dataDir, "workspaces", botId),
             defaults: () => ({ image: this.config.media.imageModel, video: this.config.media.videoModel }),
             pricingUrl: () => `${modelflareIssuer()}/api/pricing`,
+            available: async (kind) => this.account instanceof NewApiAccountManager && this.account.active ? this.account.mediaModels(kind) : undefined,
           })
         : undefined,
       mediaReady: () => !!this.magpie?.modelflareInfo().connected,
@@ -410,8 +416,7 @@ export class App {
    * 而不是悄悄删掉压缩项重试（那样会丢掉之前的上下文）。外部端点模式下代理只走 Chat（见 apiInfo），不做。
    */
   private compactEndpoint(model: string): CompactEndpoint | undefined {
-    // 官方 API 不做：压缩端点是 Modelflare 的目录列出来的，请求头也是发给 Modelflare 的
-    if (!this.magpie || officialOf(model)) return undefined;
+    if (!this.magpie || officialOf(model) || this.account instanceof NewApiAccountManager && this.account.active) return undefined;
     // 网关里的模型名是 <provider id>/<上游模型名>；provider 必须正好是它（upstreamEndpoint 找不到时会退回共用连接）
     const i = model.indexOf("/");
     const id = i > 0 ? model.slice(0, i) : "";
@@ -438,6 +443,10 @@ export class App {
   routeModel(botId: string, model: string): string {
     if (!this.magpie) return model;
     if (officialOf(model)) return model.trim();
+    if (this.account instanceof NewApiAccountManager && this.account.active) {
+      const selected = parsePlaygroundModel(model);
+      return routeModel(selected ? `Okinto/${encodeURIComponent(selected.group)}/${selected.model}` : model, this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER);
+    }
     const name = bareModel(model.trim());
     const own = botProviderId(botId);
     const shared = this.magpie.hasProvider(own) ? own : this.magpie.modelflareProviderId;
@@ -453,6 +462,7 @@ export class App {
    */
   private async syncModelPicks(): Promise<void> {
     const magpie = this.magpie;
+    if (this.account instanceof NewApiAccountManager && this.account.active) { await this.account.groupList(true).catch(() => []); return; }
     if (!magpie || magpie.state !== "running") return;
     const baseUrl = modelflareBaseUrl(this.config.modelflare.line);
     const ids = [magpie.modelflareProviderId, ...magpie.botProviderIds()].filter((id): id is string => !!id);
@@ -480,12 +490,13 @@ export class App {
   }
 
   /** 账户管理器：start() 时创建；命令行向导不启动整套服务，直接调用这里 */
-  ensureAccount(): AccountManager {
+  ensureAccount(): AccountManager | NewApiAccountManager {
     this.account ??= this.createAccount();
     return this.account;
   }
 
-  private createAccount(): AccountManager {
+  private createAccount(): AccountManager | NewApiAccountManager {
+    if (this.desktop?.newapi && !process.env.AMB_MODELFLARE_ISSUER) return this.createNewApiAccount(this.desktop.newapi);
     const account = new AccountManager({
       issuer: modelflareIssuer(),
       vault: AccountVault.at(this.config.dataDir, this.desktop?.secretBox),
@@ -507,6 +518,10 @@ export class App {
         removeBotKey: async (botId) => {
           await this.magpie?.removeBotProvider(botId);
         },
+        keyBalance: async () => {
+          const key = this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER);
+          return key ? fetchKeyBalance(modelflareBaseUrl(this.config.modelflare.line), key) : undefined;
+        },
         sharedKeyTail: () => this.magpie?.modelflareInfo().keyTail ?? "",
         sharedKeyRejected: async () => {
           if (!this.magpie) return false;
@@ -524,6 +539,36 @@ export class App {
       },
     });
     account.botsSource = () => this.store.listBots().map((b) => ({ id: b.id, name: b.name, budget: b.settings.budget }));
+    account.init();
+    return account;
+  }
+
+  private createNewApiAccount(desktop: NewApiDesktop): NewApiAccountManager {
+    const hooks: AccountHooks = {
+      connectKey: async () => { throw new Error("Playground does not issue model API keys"); },
+      disconnect: async () => { await this.magpie?.disconnectModelflare(); this.modelInfoCache = undefined; await this.runtime.listModels(true).catch(() => []); },
+      setBotKey: async () => { throw new Error("Playground uses account billing"); },
+      removeBotKey: async (id) => { await this.magpie?.removeBotProvider(id); },
+      keyBalance: async () => {
+        if (this.account instanceof NewApiAccountManager && this.account.active) return undefined;
+        const key = this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER);
+        return key ? fetchKeyBalance(modelflareBaseUrl(this.config.modelflare.line), key) : undefined;
+      },
+      sharedKeyTail: () => this.magpie?.modelflareInfo().keyTail ?? "",
+      sharedKeyRejected: async () => false,
+      alert: (text, push) => { this.notice("warn", text); if (push) void this.pushToOwner(text); },
+    };
+    const account = new NewApiAccountManager({
+      origin: modelflareIssuer(), desktop, store: this.store, hooks,
+      alerts: () => ({ lowBalanceUsd: this.config.modelflare.lowBalanceUsd, push: this.config.modelflare.lowBalancePush }),
+      connectRelay: async (endpoint, models) => {
+        if (!this.magpie) throw new Error(t("app.external_mode"));
+        await this.magpie.connectModelflare(endpoint.apiKey, endpoint.baseUrl, [endpoint.baseUrl], {}, models);
+        this.modelInfoCache = undefined;
+        await this.runtime.listModels(true).catch(() => []);
+        void this.prewarmAgent();
+      },
+    });
     account.init();
     return account;
   }
@@ -591,8 +636,8 @@ export class App {
     if (!c || Date.now() - c.at > 3600_000) void this.modelInfo().catch(() => undefined);
     if (!c) return undefined;
     if (officialOf(model)) return c.data[model.trim()]?.rates;
-    const bare = bareModel(model);
-    return (c.data[bare] ?? c.data[bare.split("/").pop() ?? bare])?.rates;
+    const bare = parsePlaygroundModel(model)?.model ?? bareModel(model);
+    return (c.data[bareModel(model)] ?? c.data[bare] ?? c.data[bare.split("/").pop() ?? bare])?.rates;
   }
 
   /** 删除机器人时一并删掉它的预算 Key */
@@ -611,6 +656,11 @@ export class App {
 
   /** 模型选择器里的能力与参考价（缓存一小时） */
   async modelInfo(force = false): Promise<Record<string, ModelInfo>> {
+    if (this.account instanceof NewApiAccountManager && this.account.active) {
+      const data = { ...await this.account.modelInfo(), ...(this.magpie?.officialProviderIds().length ? await this.officialModelInfo() : {}) };
+      this.modelInfoCache = { at: Date.now(), data };
+      return data;
+    }
     if (!force && this.modelInfoCache && Date.now() - this.modelInfoCache.at < 3600_000) return this.modelInfoCache.data;
     // 同时来的几次（代理启动时上下文长度和接口一起问）共用一次加载
     this.modelInfoLoading ??= (async () => {
@@ -625,6 +675,7 @@ export class App {
               headers: this.requestHeaders(),
               pricingUrl: `${modelflareIssuer()}/api/pricing`,
               quality: loadQualitySnapshot(),
+              profiles: !!process.env.AMB_MODELFLARE_ISSUER,
             })
           : {}),
         ...(official ? await this.officialModelInfo() : {}),
@@ -650,8 +701,8 @@ export class App {
   private async infoOf(model: string): Promise<ModelInfo | undefined> {
     const info = await this.modelInfo();
     if (officialOf(model)) return info[model.trim()];
-    const bare = bareModel(model);
-    return info[bare] ?? info[bare.split("/").pop() ?? bare];
+    const bare = parsePlaygroundModel(model)?.model ?? bareModel(model);
+    return info[bareModel(model)] ?? info[bare] ?? info[bare.split("/").pop() ?? bare];
   }
 
   notice(level: "info" | "warn", text: string): void {
@@ -676,7 +727,8 @@ export class App {
     }
     this.agent.start();
     this.ensureAccount();
-    await this.retirePastedKey();
+    if (this.account instanceof NewApiAccountManager) await this.account.restore();
+    else if (process.env.AMB_MODELFLARE_ISSUER) await this.retirePastedKey();
     this.seedDefaultBot();
     // 上次退出或崩溃时没处理完的消息：渠道开始收新消息之前取走标记，渠道起来后告诉用户
     const interrupted = takeInterrupted(this.store);
@@ -772,6 +824,7 @@ export class App {
     await this.outbox.stop();
     for (const id of [...this.channels.keys()]) await this.stopBot(id);
     await this.agent.stop();
+    if (this.account instanceof NewApiAccountManager) await this.account.close();
     await this.magpie?.stop();
     this.store.close();
     this.lock?.release();
@@ -793,6 +846,9 @@ export class App {
 
   modelflareStatus(): ModelflareStatus {
     const line = this.config.modelflare.line;
+    if (this.account instanceof NewApiAccountManager && this.account.active) {
+      return { mode: "managed", connected: true, official: (this.magpie?.officialProviderIds().length ?? 0) > 0, keyTail: "", line, baseUrl: modelflareBaseUrl(line), gateway: this.magpie?.state ?? "stopped" };
+    }
     if (!this.magpie) return { mode: "external", connected: true, official: false, keyTail: "", line, baseUrl: this.config.magpie.externalBaseUrl, gateway: "external" };
     const info = this.magpie.modelflareInfo();
     return { mode: "managed", connected: info.connected, official: this.magpie.officialProviderIds().length > 0, keyTail: info.keyTail, line, baseUrl: info.baseUrl || modelflareBaseUrl(line), gateway: this.magpie.state };
@@ -842,7 +898,7 @@ export class App {
    */
   async retirePastedKey(): Promise<void> {
     const account = this.ensureAccount();
-    if (!this.magpie || this.magpie.state !== "running" || account.status().state !== "signed_out") return;
+    if (!(account instanceof AccountManager) || !this.magpie || this.magpie.state !== "running" || account.status().state !== "signed_out") return;
     if (!this.magpie.modelflareInfo().connected) return;
     try {
       await this.disconnectModelflare();
@@ -860,9 +916,11 @@ export class App {
     const baseUrl = modelflareBaseUrl(line);
     const r = await verifyModelflareKey(baseUrl, apiKey.trim(), { line });
     if (!r.ok) return r;
-    await this.magpie.connectModelflare(apiKey, baseUrl, this.allowedModelflareUrls(), this.requestHeaders(), r.chatModels);
+    if (this.account instanceof NewApiAccountManager && this.account.active) await this.account.logout();
+    await this.magpie.connectModelflare(apiKey.trim(), baseUrl, this.allowedModelflareUrls(), this.requestHeaders(), r.chatModels);
     this.modelInfoCache = undefined;
     this.setModelflareLineConfig(line);
+    await this.account?.refresh();
     await this.runtime.listModels(true).catch(() => []);
     // 刚连上：现在才有模型可用，把代理进程也提前拉起来（首次启动可能要几分钟）
     void this.prewarmAgent();
@@ -882,6 +940,7 @@ export class App {
   async disconnectModelflare(): Promise<void> {
     if (!this.magpie) throw new Error(t("app.external_mode"));
     await this.magpie.disconnectModelflare();
+    await this.account?.refresh();
     await this.runtime.listModels(true).catch(() => []);
   }
 
@@ -925,7 +984,9 @@ export class App {
   /** 设置页与首次设置用：共用 Key 能用的图片 / 视频模型（按推荐顺序）与自动时会选的那个 */
   async mediaModels(): Promise<{ image: string[]; video: string[]; recommended: { image: string; video: string }; error?: string }> {
     const media = this.agent.media;
-    const key = this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER) ?? "";
+    const key = this.account instanceof NewApiAccountManager && this.account.active
+      ? this.account.mediaKey
+      : this.magpie?.providerKey(this.magpie.modelflareProviderId ?? MODELFLARE_PROVIDER) ?? "";
     const empty = { image: [], video: [], recommended: { image: "", video: "" } };
     if (!media || !key) return empty;
     try {

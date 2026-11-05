@@ -1,5 +1,7 @@
 // models · zh-CN：模型选择器（components/model-picker.js）
 export default {
+  group: "分组",
+  allGroups: "全部可用分组",
   /** 认不出的模型族 */
   otherFamily: "其他",
   caps: {

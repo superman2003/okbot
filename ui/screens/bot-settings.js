@@ -68,6 +68,9 @@ function BudgetRows({ bot, budget, account, onSaved, onOpenSettings }) {
     if (!Number.isFinite(v) || v < 0) return setLimit(String(budget.limitUsd));
     if (v !== budget.limitUsd) save(budget.enabled, v);
   };
+  if (account?.capabilities?.budgets === false && signedIn) {
+    return html`<${Row} id="budget" name=${t("botSettings.budget.name")} sub=${t("botSettings.budget.playground")} />`;
+  }
   if (!signedIn) {
     return html`<${Row} id="budget" name=${t("botSettings.budget.name")} sub=${t("botSettings.budget.signedOut")}>
       <button type="button" class="text accent" onClick=${() => onOpenSettings("modelflare", "account")}>${t("botSettings.budget.signIn")}</button>

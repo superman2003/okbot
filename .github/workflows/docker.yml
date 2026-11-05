@@ -3,17 +3,17 @@
 # How to use
 #   - Release: pushing a tag `v<version>` (the same tag that starts the Release workflow) builds the
 #     image for linux/amd64 and linux/arm64 and publishes it as
-#       ghcr.io/modelflare-ai/anymodel-bot:<version>   every release
-#       ghcr.io/modelflare-ai/anymodel-bot:latest      only releases without "-" (not v0.2.0-rc.1)
+#       ghcr.io/modelflare-ai/okbot:<version>   every release
+#       ghcr.io/modelflare-ai/okbot:latest      only releases without "-" (not v0.2.0-rc.1)
 #     Users then need one command (the README and the website show it):
-#       docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/modelflare-ai/anymodel-bot
+#       docker run -d --name amb -p 3600:3600 -v amb-data:/data ghcr.io/modelflare-ai/okbot
 #   - Publish an existing tag (one created before this workflow existed): Actions -> Docker ->
 #     "Run workflow" on master with `tag` set, e.g. v0.1.10. That tag is checked out and published.
 #   - Test build: "Run workflow" with `tag` empty, on any branch. Both architectures are built from
 #     that branch, nothing is pushed.
 #
 # One-time setup after the first publish: GHCR creates the package as private. Open
-# github.com/orgs/modelflare-ai/packages -> anymodel-bot -> Package settings -> Change visibility ->
+# github.com/orgs/modelflare-ai/packages -> okbot -> Package settings -> Change visibility ->
 # Public, or `docker pull` asks users to log in.
 #
 # Each architecture builds on a runner of its own CPU (the image installs per-arch native packages
@@ -42,7 +42,7 @@ concurrency:
 env:
   # Keep the image in the namespace of the repository that triggered the workflow.
   # GitHub repository owners are case-insensitive and are normalized in GHCR paths.
-  IMAGE: ghcr.io/${{ github.repository_owner }}/anymodel-bot
+  IMAGE: ghcr.io/${{ github.repository_owner }}/okbot
 
 jobs:
   meta:
@@ -148,7 +148,7 @@ jobs:
           provenance: false
           sbom: false
           labels: |
-            org.opencontainers.image.title=AnyModelBot
+            org.opencontainers.image.title=okbot
             org.opencontainers.image.description=Local-first AI bots with any model, pay as you go
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.url=https://anymodel.bot/

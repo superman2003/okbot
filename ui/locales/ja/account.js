@@ -15,8 +15,13 @@ export default {
     "empty": "この期間の利用はありません"
   },
   "notifications": {
-    "title": "Modelflare からのお知らせ",
+    "title": "OKINTO New API からのお知らせ",
     "empty": "お知らせはありません",
     "details": "詳細を見る ↗"
   }
+,
+  "login": {
+  "title": "OKINTO New API にログイン",
+  "hint": "ログインすると現在の API キー接続が置き換わります。"
+}
 };

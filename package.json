@@ -1,9 +1,9 @@
 {
   "name": "anymodel-bot",
-  "productName": "anymodel bot",
-  "version": "0.1.23",
+  "productName": "okbot",
+  "version": "0.1.24",
   "private": true,
-  "description": "anymodel bot：任意模型的个人 AI 助手（飞书 + 微信 iLink），内置 magpie 模型网关",
+  "description": "okbot：任意模型的个人 AI 助手（飞书 + 微信 iLink），内置 magpie 模型网关",
   "license": "MIT",
   "type": "module",
   "main": "dist/electron/main.js",
@@ -62,8 +62,9 @@
   },
   "build": {
     "appId": "dev.anymodel.bot",
-    "productName": "anymodel bot",
-    "artifactName": "anymodel-bot-${version}-${os}-${arch}.${ext}",
+    "productName": "okbot",
+    "executableName": "okbot",
+    "artifactName": "okbot-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release",
       "buildResources": "assets"
@@ -243,7 +244,7 @@
       ],
       "desktop": {
         "entry": {
-          "StartupWMClass": "anymodel bot"
+          "StartupWMClass": "okbot"
         }
       }
     }

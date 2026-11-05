@@ -14,6 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../log.js";
 import { t } from "../i18n/index.js";
+import { parsePlaygroundModel } from "../account/newapi-types.js";
 
 const log = logger("agent.media");
 
@@ -34,6 +35,10 @@ export interface MediaOptions {
   /** 文档全文（每个模型一节） */
   docsUrl?: string;
   fetchImpl?: typeof fetch;
+  /** New API uses /v1beta for native Gemini requests. */
+  geminiBaseUrl?: () => string;
+  /** Account-specific authorized models; undefined uses the API key catalog. */
+  available?: (kind: MediaKind) => Promise<MediaModel[] | undefined>;
   /** 视频轮询间隔与上限（测试用） */
   pollMs?: number;
   videoTimeoutMs?: number;
@@ -43,7 +48,7 @@ export interface MediaModel {
   id: string;
   kind: MediaKind;
   /** images = OpenAI Images API；gemini = generateContent；videos = /v1/videos */
-  route: "images" | "gemini" | "videos";
+  route: "images" | "gemini" | "chat" | "videos";
   /** 价格目录里的 media_options.image / media_options.video */
   options?: Record<string, unknown>;
   /** 必须带参考素材（图生视频之类），只有文字时不能用 */
@@ -86,6 +91,7 @@ export interface MediaPlan {
 interface CatalogEntry {
   model_name: string;
   display_priority?: number;
+  supported_endpoint_types?: string[];
   quota_type?: number;
   model_price?: number;
   billing_unit?: string;
@@ -94,7 +100,7 @@ interface CatalogEntry {
   media_options?: { image?: Record<string, unknown>; video?: Record<string, unknown> };
 }
 
-interface Catalog {
+export interface Catalog {
   data?: CatalogEntry[];
   group_ratio?: Record<string, number>;
   usable_group?: Record<string, unknown>;
@@ -104,7 +110,7 @@ const MAX_BYTES = 200 * 1024 * 1024;
 /** 参考素材按 data URL / Base64 嵌进请求，单个文件上限 */
 const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
 const CACHE_MS = 3600_000;
-const DOCS_URL = "https://docs.modelflare.dev";
+const DOCS_URL = "https://docs.newapi.pro";
 const EXT: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif", "video/mp4": "mp4", "video/webm": "webm" };
 const MIME: Record<string, string> = {
   ".png": "image/png",
@@ -131,9 +137,23 @@ export function sortModels(list: MediaModel[]): MediaModel[] {
   return [...list].sort((a, b) => a.priority - b.priority || Number(a.requiresReference) - Number(b.requiresReference) || a.id.localeCompare(b.id, "en", { sensitivity: "base" }));
 }
 
-/** 设置里的默认模型还能用就用它，否则推荐顺序里第一个不需要参考素材的 */
+/** 优先使用手动设置；图片自动优先 gpt-image-2.5，再按推荐顺序选不需要参考素材的模型。 */
 export function pickDefault(list: MediaModel[], configured: string): MediaModel | undefined {
-  return list.find((m) => m.id === configured) ?? list.find((m) => !m.requiresReference) ?? list[0];
+  return list.find((m) => m.id === configured)
+    ?? list.find((m) => m.kind === "image" && (parsePlaygroundModel(m.id)?.model ?? m.id) === "gpt-image-2.5" && !m.requiresReference)
+    ?? list.find((m) => !m.requiresReference)
+    ?? list[0];
+}
+
+/** Prefer explicit endpoints; some New API image models only advertise chat. */
+export function imageRoute(id: string, endpoints: string[] = []): MediaModel["route"] | undefined {
+  if (endpoints.some((v) => /image-generation|images/.test(v))) return "images";
+  const name = (parsePlaygroundModel(id)?.model ?? id).split("/").pop()!;
+  if (/^(?:gpt-image-|dall-e-)/i.test(name)) return "images";
+  if (/^(?:gemini-.*image|nano-banana(?:-|$)|grok-imagine-image)/i.test(name)) {
+    return endpoints.includes("gemini") && !endpoints.includes("openai") ? "gemini" : "chat";
+  }
+  return undefined;
 }
 
 /** 单价（按分组倍率折算）；按 token 计费或没有价格时为空 */
@@ -272,12 +292,12 @@ export class MediaService {
 
   private key(botId: string): string {
     const key = this.o.keyFor(botId);
-    if (!key) throw new MediaError("还没有连接 Modelflare，无法生成图片或视频");
+    if (!key) throw new MediaError("还没有连接 OKINTO New API，无法生成图片或视频");
     return key;
   }
 
-  private async call(key: string, method: string, p: string, body?: unknown, timeoutMs = 300_000): Promise<Response> {
-    const res = await this.fetch(`${this.o.baseUrl()}${p}`, {
+  private async call(key: string, method: string, p: string, body?: unknown, timeoutMs = 300_000, baseUrl = this.o.baseUrl()): Promise<Response> {
+    const res = await this.fetch(`${baseUrl}${p}`, {
       method,
       headers: { Authorization: `Bearer ${key}`, ...this.o.headers(), ...(body !== undefined ? { "content-type": "application/json" } : {}) },
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -286,7 +306,7 @@ export class MediaService {
     if (!res.ok) {
       const detail = (await res.json().catch(() => ({}))) as { error?: { message?: string; code?: string } };
       const msg = detail.error?.message || `HTTP ${res.status}`;
-      throw new MediaError(detail.error?.code === "model_not_found" ? `这把 Key 不能用这个模型：${msg}` : `Modelflare 返回错误：${msg}`);
+      throw new MediaError(detail.error?.code === "model_not_found" ? `这把 Key 不能用这个模型：${msg}` : `OKINTO New API 返回错误：${msg}`);
     }
     return res;
   }
@@ -309,15 +329,21 @@ export class MediaService {
 
   /** 这把 Key 能用的图片 / 视频模型，按推荐顺序 */
   async available(key: string, kind: MediaKind): Promise<MediaModel[]> {
+    const supplied = await this.o.available?.(kind);
+    if (supplied !== undefined) return supplied;
     const [res, catalog] = await Promise.all([this.call(key, "GET", `/models?scope=authorized&kind=${kind}`, undefined, 20_000), this.catalog()]);
     const body = (await res.json()) as { data?: Array<{ id?: string; kind?: string; image_route?: string }> };
     const entries = new Map((catalog.data ?? []).map((e) => [e.model_name, e]));
     const out: MediaModel[] = [];
     for (const m of body.data ?? []) {
       if (!m.id || (m.kind && m.kind !== kind)) continue;
-      const route = kind === "video" ? "videos" : m.image_route === "gemini-generate-content" ? "gemini" : m.image_route === "images" ? "images" : undefined;
-      if (!route) continue;
       const e = entries.get(m.id);
+      const inferred = imageRoute(m.id, e?.supported_endpoint_types);
+      const imageEndpoint = !!inferred;
+      const videoEndpoint = e?.supported_endpoint_types?.some((v) => /video/.test(v));
+      if (!m.kind && !m.image_route && !(kind === "image" ? imageEndpoint : videoEndpoint)) continue;
+      const route = kind === "video" ? "videos" : !m.image_route && imageEndpoint ? inferred : m.image_route === "gemini-generate-content" ? "gemini" : m.image_route === "images" ? "images" : undefined;
+      if (!route) continue;
       const options = e?.media_options?.[kind];
       out.push({
         id: m.id,
@@ -362,8 +388,18 @@ export class MediaService {
 
   /** media_docs 工具：该模型在 docs.modelflare.dev 上的那一页（Markdown） */
   async docs(model: unknown): Promise<string> {
-    const id = String(model ?? "").trim();
+    const selected = String(model ?? "").trim();
+    const id = parsePlaygroundModel(selected)?.model ?? selected;
     if (!id) throw new MediaError("缺少 model");
+    if (!this.o.docsUrl) {
+      const entry = (await this.catalog()).data?.find((e) => e.model_name === id);
+      const route = imageRoute(id, entry?.supported_endpoint_types);
+      if (route === "chat") return `New API image model ${selected} uses POST /v1/chat/completions with stream:false. Call generate_image with model and prompt. For reference images use body {"messages":[{"role":"user","content":[{"type":"text","text":"your prompt"},{"type":"image_url","image_url":{"url":"workspace:media/reference.png"}}]}]}. The host extracts returned images, saves them and supplies credentials. Do not call the API yourself.`;
+      if (route === "gemini") return `New API image model ${selected} uses Gemini generateContent. Call generate_image with model and prompt, or body {"contents":[{"role":"user","parts":[{"text":"your prompt"},{"inline_data":{"mime_type":"image/png","data":"workspace-base64:media/reference.png"}}]}],"generationConfig":{"responseModalities":["TEXT","IMAGE"]}}. The host supplies credentials and saves images.`;
+      if (route === "images") {
+        return `New API image endpoint for ${selected}: POST /v1/images/generations. Pass generate_image with model, prompt, and optional body {"prompt":"...","n":1,"size":"1024x1024"}. Do not include model inside body. Use only parameters supported by the selected upstream model. Local references use workspace:relative/path. The host supplies the API key. Documentation: ${DOCS_URL}`;
+      }
+    }
     if (!this.docsCache || Date.now() - this.docsCache.at > CACHE_MS) {
       const res = await this.fetch(`${this.docsUrl}/llms-full.txt`, { signal: AbortSignal.timeout(30_000) }).catch((e: Error) => {
         throw new MediaError(`读取文档失败：${e.message}`);
@@ -472,14 +508,40 @@ export class MediaService {
     const key = this.key(botId);
     const files: string[] = [];
     if (model.route === "gemini") {
-      const req = body ? withoutModel(body) : { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-      const res = await this.call(key, "POST", `/models/${encodeURIComponent(model.id)}:generateContent`, req);
+      const req = body ? withoutModel(body) : { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["TEXT", "IMAGE"] } };
+      const res = await this.call(key, "POST", `/models/${encodeURIComponent(model.id)}:generateContent`, req, 300_000, this.o.geminiBaseUrl?.());
       const out = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { mimeType?: string; data?: string }; inline_data?: { mime_type?: string; data?: string } }> } }> };
       for (const c of out.candidates ?? [])
         for (const p of c.content?.parts ?? []) {
           const data = p.inlineData?.data ?? p.inline_data?.data;
           if (data) files.push(this.save(botId, "image", Buffer.from(data, "base64"), p.inlineData?.mimeType ?? p.inline_data?.mime_type ?? "image/png"));
         }
+    } else if (model.route === "chat") {
+      const req = { ...(body ?? { messages: [{ role: "user", content: prompt }] }), model: model.id, stream: false };
+      const res = await this.call(key, "POST", "/chat/completions", req);
+      const out = await res.json() as { choices?: Array<{ message?: { content?: unknown; images?: unknown } }> };
+      const urls = new Set<string>();
+      const collect = (value: unknown): void => {
+        if (typeof value === "string") {
+          for (const match of value.matchAll(/data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]+|!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/g)) urls.add(match[1] ?? match[0]);
+        } else if (Array.isArray(value)) value.forEach(collect);
+        else if (value && typeof value === "object") {
+          const part = value as { type?: string; image_url?: string | { url?: string }; url?: string; text?: string };
+          const image = typeof part.image_url === "string" ? part.image_url : part.image_url?.url;
+          if (image) urls.add(image);
+          if ((part.type === "image" || part.type === "image_url") && part.url) urls.add(part.url);
+          if (part.text) collect(part.text);
+        }
+      };
+      for (const choice of out.choices ?? []) { collect(choice.message?.content); collect(choice.message?.images); }
+      for (const url of urls) {
+        const inline = /^data:(image\/[\w.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(url);
+        if (inline) files.push(this.save(botId, "image", Buffer.from(inline[2], "base64"), inline[1]));
+        else {
+          const d = await this.download(url);
+          files.push(this.save(botId, "image", d.data, d.mime || "image/png"));
+        }
+      }
     } else {
       const size = typeof args.size === "string" && /^\d{2,5}x\d{2,5}$/.test(args.size) ? args.size : undefined;
       const req = body ? { ...body, model: model.id } : { model: model.id, prompt, ...(size ? { size } : {}) };
@@ -488,6 +550,8 @@ export class MediaService {
       for (const item of out.data ?? []) {
         if (item.b64_json) files.push(this.save(botId, "image", Buffer.from(item.b64_json, "base64"), "image/png"));
         else if (item.url) {
+          const inline = /^data:(image\/[\w.+-]+);base64,([A-Za-z0-9+/=]+)$/.exec(item.url);
+          if (inline) { files.push(this.save(botId, "image", Buffer.from(inline[2], "base64"), inline[1])); continue; }
           const d = await this.download(item.url);
           files.push(this.save(botId, "image", d.data, d.mime || "image/png"));
         }

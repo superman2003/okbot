@@ -7,7 +7,7 @@ import os from "node:os";
 import { logger } from "../log.js";
 import { t } from "../i18n/index.js";
 import type { Store } from "../store/db.js";
-import { MODELFLARE_CLIENT_ID, MODELFLARE_SCOPES, MODELFLARE_WEB, UTM, webUrl } from "../modelflare.js";
+import { MODELFLARE_CLIENT_ID, MODELFLARE_SCOPES, MODELFLARE_WEB, UTM, webUrl, type KeyBalance } from "../modelflare.js";
 import { discover, OAuthError, revokeToken, startLogin, type LoginAttempt, type OidcEndpoints } from "./oauth.js";
 import { AccountRevokedError, AccountSession, ApiError, ROUTING_STRATEGIES, type AppKey, type ConnectedAccount, type RoutingStrategy, type UsageRow } from "./client.js";
 import type { AccountRecord, AccountVault } from "./vault.js";
@@ -22,6 +22,7 @@ export interface AccountHooks {
   setBotKey(botId: string, key: string): Promise<void>;
   removeBotKey(botId: string): Promise<void>;
   /** 内置网关共用连接当前那把 Key 的最后 4 位；没连接时为空 */
+  keyBalance?(): Promise<KeyBalance | undefined>;
   sharedKeyTail(): string;
   /** 共用连接的 Key 已经不能用：没连接，或 Modelflare 说这把 Key 无效 */
   sharedKeyRejected(): Promise<boolean>;
@@ -48,8 +49,11 @@ export interface AccountStatus {
   /** 账户名称（登录后） */
   name: string;
   /** 余额来源：account = 登录账户；key = 只用 API Key；none = 未连接 */
-  source: "account" | "none";
+  source: "account" | "key" | "none";
   balanceUsd: number | null;
+  balanceUnit?: string;
+  balanceScope?: "account" | "token" | "billing";
+  unlimitedBalance?: boolean;
   usedUsd: number | null;
   billedToEnterprise: boolean;
   updatedAt: number;
@@ -59,6 +63,8 @@ export interface AccountStatus {
   lowBalance: boolean;
   /** Key 的性价比：supported = Modelflare 认这个设置（回显过 routing_strategy），否则界面不显示这个控件 */
   keyQuality: { strategy: RoutingStrategy; supported: boolean };
+  loginMethod?: "newapi-playground" | "oidc";
+  capabilities?: { groups: boolean; usage: boolean; budgets: boolean; notifications: boolean; invite: boolean; media?: boolean };
 }
 
 /**
@@ -96,7 +102,7 @@ export class AccountManager {
   private session: AccountSession | undefined;
   private endpoints: OidcEndpoints | undefined;
   private login: LoginAttempt | undefined;
-  private snapshot: Pick<AccountStatus, "name" | "source" | "balanceUsd" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error"> = {
+  private snapshot: Pick<AccountStatus, "name" | "source" | "balanceUsd" | "usedUsd" | "billedToEnterprise" | "updatedAt" | "error" | "balanceUnit" | "balanceScope" | "unlimitedBalance"> = {
     name: "",
     source: "none",
     balanceUsd: null,
@@ -155,7 +161,7 @@ export class AccountManager {
       state: this.state,
       loginUrl: this.state === "signing_in" ? (this.login?.url ?? "") : "",
       alerts,
-      lowBalance: bal !== null && alerts.lowBalanceUsd > 0 && bal < alerts.lowBalanceUsd,
+      lowBalance: (this.snapshot.balanceUnit ?? "USD") === "USD" && !this.snapshot.unlimitedBalance && bal !== null && alerts.lowBalanceUsd > 0 && bal < alerts.lowBalanceUsd,
       keyQuality: { strategy: this.routingStrategy(), supported: this.routing().support === "yes" },
     };
   }
@@ -336,7 +342,18 @@ export class AccountManager {
         // 启动后、之后每 5 分钟、切回窗口时都顺带核对一次 Key；不拖慢余额的返回
         void this.repairKeys(60_000);
       } else {
-        this.snapshot = { ...this.snapshot, source: "none", balanceUsd: null, usedUsd: null, updatedAt: Date.now() };
+        const b = await this.o.hooks.keyBalance?.();
+        this.snapshot = {
+          ...this.snapshot,
+          source: b ? "key" : "none",
+          balanceUsd: b ? b.available : null,
+          usedUsd: b ? b.used : null,
+          balanceUnit: b?.unit ?? "USD",
+          balanceScope: b?.scope,
+          unlimitedBalance: b?.unlimited ?? false,
+          updatedAt: Date.now(),
+          error: b ? "" : this.snapshot.error,
+        };
       }
       this.checkLowBalance();
     } catch (e) {
@@ -348,12 +365,12 @@ export class AccountManager {
   /** 余额跌破阈值时提醒一次；回到阈值以上后才会再次提醒 */
   private checkLowBalance(): void {
     const { lowBalanceUsd, push } = this.o.alerts();
-    const bal = this.snapshot.balanceUsd;
+    const bal = this.snapshot.unlimitedBalance || (this.snapshot.balanceUnit ?? "USD") !== "USD" ? null : this.snapshot.balanceUsd;
     if (bal === null || lowBalanceUsd <= 0) return;
     const alerted = !!this.o.store.getKV(ALERTED);
     if (bal < lowBalanceUsd && !alerted) {
       this.o.store.setKV(ALERTED, String(Date.now()));
-      this.o.hooks.alert(t("account.low_balance", { balance: bal.toFixed(2), threshold: lowBalanceUsd, url: webUrl("/billing", "amb_low_balance") }), push);
+      this.o.hooks.alert(t("account.low_balance", { balance: bal.toFixed(2), threshold: lowBalanceUsd, url: webUrl("/console/topup", "amb_low_balance") }), push);
     } else if (bal >= lowBalanceUsd && alerted) {
       this.o.store.deleteKV(ALERTED);
     }
@@ -447,7 +464,7 @@ export class AccountManager {
   // ---------- Key 核对 ----------
 
   private deviceKeyName(): string {
-    return `AnyModelBot · ${this.o.hostname ?? os.hostname()}`.slice(0, 50);
+    return `okbot · ${this.o.hostname ?? os.hostname()}`.slice(0, 50);
   }
 
   /**
@@ -694,7 +711,7 @@ export class AccountManager {
 }
 
 function keyName(botName: string): string {
-  return `AnyModelBot · ${botName}`.slice(0, 50);
+  return `okbot · ${botName}`.slice(0, 50);
 }
 
 export function startOfLocalDay(ms: number): number {

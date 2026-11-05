@@ -367,7 +367,7 @@ describe("机器人段：宿主写文件，amb-prompt 插件每次模型请求�
     try {
       const text = fs.readFileSync((host as any).writePatch("m"), "utf8");
       expect(text).toContain(`- id: system-prompt\n  config:\n    personaPrefix: ${JSON.stringify(agentPersona())}\n    includeHarnessIdentity: false\n- insert:\n`);
-      expect(text).toContain('    - id: amb-prompt\n      name: "/rt/plugins/amb-prompt.mjs"\n');
+      expect(text).toContain(`    - id: amb-prompt\n      name: ${JSON.stringify(path.join("/rt", "plugins", "amb-prompt.mjs"))}\n`);
       const env = (host as any).env();
       expect(env.AMB_PROMPT_FILE).toBe(host.promptFile);
       // 文件在数据目录里、工作区和 DSH 主目录之外：代理的文件工具读不到也改不了

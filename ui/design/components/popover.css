@@ -27,6 +27,12 @@
 }
 .pop.model-picker { width: 340px; max-height: 420px; }
 .pop.model-picker li:not(.group):not(.sep) { min-height: 34px; }
+.model-group-filter { display: flex; flex: none; align-items: center; gap: var(--space-2); padding: var(--space-1-5) var(--space-3); border-bottom: 1px solid var(--line-2); }
+.model-group-filter .k { flex: none; white-space: nowrap; color: var(--fg-2); font-size: var(--fs-sm); }
+.model-group-select { position: relative; flex: 1; min-width: 0; }
+.model-group-select select.pick { appearance: none; display: block; width: 100%; max-width: none; height: var(--ctl-md); padding-right: calc(var(--space-2) * 2 + var(--ic-xs) * 1px); border: 0; font-family: inherit; text-overflow: ellipsis; cursor: pointer; }
+.model-group-select > .ic { position: absolute; right: var(--space-2); top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
+.model-group-select option { color: var(--fg); background: var(--bg); }
 
 /* —— 模型选择器的两个滑块（TierPanel）：性价比、模型智能；标题在左，当前值大字居中，滑块下面是档名或两头的说法 —— */
 .tiers { position: relative; display: grid; padding: var(--space-3) var(--space-4) var(--space-2-5); overflow-y: auto; }

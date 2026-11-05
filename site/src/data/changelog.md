@@ -4,6 +4,14 @@
 
 这里只写用户能感受到的变化。更早的版本见 [GitHub 发布页](https://github.com/modelflare-ai/AnyModelBot/releases)。
 
+## 0.1.24 - 2026-11-05
+
+### 修复
+
+- 恢复此前发布遗漏的 OKINTO New API 集成：默认连接 api.okinto.com，桌面版可在 OKINTO 页面登录，也可使用站点 API Key。
+- 恢复账户钱包余额、分组模型选择、模型价格和生图支持，并保留官方厂商 API Key、目录 Bot 等上游功能。
+- 安装包、窗口和界面统一显示 okbot / OKINTO；版本检查指向本仓库。
+
 ## 0.1.23 - 2026-11-05
 
 ### 改进

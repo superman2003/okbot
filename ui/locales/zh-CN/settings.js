@@ -3,7 +3,7 @@ export default {
   tabs: {
     general: "常规",
     appearance: "外观",
-    modelflare: "模型",
+    modelflare: "OKINTO New API",
     computer: "电脑操作",
     connections: "连接",
     privacy: "隐私与安全",
@@ -176,11 +176,20 @@ export default {
     label: "预览",
     reply: "好的，改写后错误处理也更直观。下面这行在开启{b}后会折行显示：",
   },
+  rekey: {
+    title: "更换 OKINTO New API 密钥",
+    submit: "验证并保存",
+  },
+  disconnect: {
+    title: "断开 OKINTO New API？",
+    body: "会从本机删除这个 API Key。机器人和会话都会保留，重新连接后继续使用。",
+    confirm: "断开",
+  },
   logout: {
-    title: "退出 Modelflare 账户？",
-    body: "会撤销这台电脑的授权。机器人和会话都会保留，重新登录后继续使用。",
+    title: "退出 OKINTO New API 账户？",
+    body: "会撤销这台电脑的授权，并删除登录时为它和各机器人签发的 API Key。机器人和会话都会保留。",
     confirm: "退出登录",
-    notRevoked: "服务端没有确认撤销：本机已退出，可在 Modelflare 网页的「已授权的应用」里再撤销一次",
+    notRevoked: "服务端没有确认撤销：本机已退出，可在 OKINTO New API 网页的「已授权的应用」里再撤销一次",
   },
   notifyDenied: "没有通知权限：请在系统或浏览器的网站设置里允许本页面发通知",
   rows: {
@@ -280,21 +289,34 @@ export default {
       button: "恢复默认",
     },
     account: {
-      name: "Modelflare 账户",
+      apiKey: "使用 api.okinto.com 的 API Key 连接",
+      name: "OKINTO New API 账户",
       signedIn: "已登录",
       enterprise: "{name} 的费用由企业钱包支付",
       signedOut: "登录后可以查看用量、通知和邀请链接，也能给机器人单独设预算",
       keys: "登录 注册 账户 退出 account login",
       logout: "退出登录",
-      login: "登录",
+      noBrowserLogin: "API Key 连接",
+      login: "登录 / 注册",
     },
     connection: {
+      playground: "使用登录会话调用 New API 游乐场，模型按所选分组计费",
       name: "连接",
       subExternal: "由环境变量 AMB_MAGPIE_BASE_URL 指定的端点（开发/测试）",
-    },
+
+  "nameSignedIn": "账户连接",
+  "subSignedIn": "使用当前 OKINTO 账户",
+  "sub": "使用 OKINTO 站点 API Key",
+  "keys": "OKINTO API Key 连接 模型",
+  "rekey": "更换 API Key",
+  "disconnect": "断开连接"
+},
     balance: {
+      fromToken: "当前 API Key 的剩余额度；账户钱包请到控制台查看",
+      fromAccount: "New API 账户钱包余额",
       name: "余额",
       error: "读取失败：{error}",
+      fromKey: "由 New API 账单接口返回；额度范围由站点设置决定",
       updated: "更新于 {time}",
       keys: "余额 充值 钱包 balance top up",
       refresh: "刷新余额",
@@ -319,7 +341,7 @@ export default {
     notifications: {
       name: "通知",
       unread: "{count} 条未读",
-      sub: "Modelflare 发给你的通知与公告",
+      sub: "OKINTO New API 发给你的通知与公告",
       keys: "通知 公告 消息 notification",
     },
     invite: {
@@ -363,8 +385,8 @@ export default {
       count: "{count} 个",
     },
     console: {
-      name: "Modelflare 控制台",
-      sub: "账单与发票",
+      name: "OKINTO New API 控制台",
+      sub: "账单、发票与 API Key 管理",
       keys: "控制台 账单 console",
     },
     cuStatus: {
@@ -385,12 +407,12 @@ export default {
     },
     keyStorage: {
       name: "密钥存放",
-      sub: "API Key 只在本机内置网关的隔离配置里，不写日志、不进命令行参数",
+      sub: "OKINTO New API 密钥只在本机内置网关的隔离配置里，不写日志、不进命令行参数",
       keys: "安全",
     },
     accountStorage: {
       name: "账户凭据",
-      sub: "登录 Modelflare 的凭据只存在数据目录，桌面版用系统钥匙串加密；界面只拿到账户名称",
+      sub: "登录 OKINTO New API 的凭据只存在数据目录，桌面版用系统钥匙串加密；界面只拿到账户名称",
       keys: "安全 登录 钥匙串",
     },
     token: {

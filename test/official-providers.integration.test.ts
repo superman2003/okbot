@@ -182,7 +182,7 @@ d("官方 API（真实网关）", () => {
     expect(modelflare.calls).toEqual([]);
     await say("default", "gpt-5.6-sol");
     expect(modelflare.calls.at(-1)).toMatchObject({ auth: "Bearer mf-key-1234", model: "gpt-5.6-sol" });
-    expect(modelflare.calls.at(-1)!.skill).toMatch(/^anymodel-bot\//);
+    expect(modelflare.calls.at(-1)!.skill).toMatch(/^\d+\.\d+\.\d+$/);
     await app.disconnectModelflare();
     expect((await api("/modelflare")).json).toMatchObject({ connected: false, official: true });
     expect(await row("openai")).toMatchObject({ connected: true });

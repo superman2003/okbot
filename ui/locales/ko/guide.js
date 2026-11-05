@@ -20,7 +20,7 @@ export default {
   "closeCoach": "안내 닫기",
   "doneTitle": "잘하셨어요!",
   "fill": "입력하기",
-  "openConsole": "Modelflare 콘솔에서 이미지 모델 활성화 ↗",
+  "openConsole": "OKINTO New API 콘솔에서 이미지 모델 활성화 ↗",
   "later": "나중에",
   "stopHere": "여기까지 하기",
   "next": "다음: {title}",

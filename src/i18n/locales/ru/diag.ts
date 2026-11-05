@@ -3,7 +3,7 @@ export default {
   fetch_timeout: "Время истекло: нет ответа за {s} с",
   no_endpoint: "Адрес API не настроен",
   no_model:
-    "Нет доступной модели: сначала выберите модель по умолчанию в Modelflare",
+    "Нет доступной модели: сначала выберите модель по умолчанию в OKINTO New API",
   no_content: "В ответе отсутствует choices[0].message.content: {body}",
   verdict_endpoint_ok: "API работает",
   verdict_endpoint_error: "Ошибка API: {error}",
@@ -36,7 +36,7 @@ export default {
   agent_off: "Режим агента отключён (AMB_AGENT=off); ботам доступен только чат",
   no_runtime: "Среда агента (DSH) не найдена; ботам доступен только чат",
   agent_no_model:
-    "Нет доступной модели: сначала подключите Modelflare и выберите модель по умолчанию",
+    "Нет доступной модели: сначала подключите OKINTO New API и выберите модель по умолчанию",
   queue_idle: "Нет выполняемых запросов",
   queue_busy: {
     one: "Выполняется {count} запрос (прошло {s} с). Новые сообщения в этом разговоре присоединяются к нему или ждут, пока агент их примет. При зависании используйте /stop или «Перезапустить процесс агента» ниже",
@@ -68,7 +68,7 @@ export default {
   stage_now: "; текущий этап: {stage}",
   stage_now_output: "; текущий этап: {stage}; последний вывод: {line}",
   timeout: "Время истекло",
-  report_title: "Диагностика anymodel bot · {at}",
+  report_title: "Диагностика okbot · {at}",
   report_version:
     "Версия {version} · {platform} {arch} · {os}{electron} · Node {node} · работает {uptime} с",
   report_data_dir: "Папка данных: {dir}",

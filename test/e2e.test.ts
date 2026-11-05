@@ -261,12 +261,12 @@ describe("Web 界面 / API", () => {
     expect(st.json.gateway).toEqual({ mode: "external", state: "external" });
     expect(JSON.stringify(st.json)).not.toMatch(/gatewayPort|webPort|binary/);
   });
-  it("Modelflare：外部端点模式视为已连接，不能在界面里切换线路；没有填 Key、断开的接口", async () => {
+  it("Modelflare：外部端点模式视为已连接，不能在界面里管理连接", async () => {
     const mf = await api("/modelflare");
     expect(mf.json).toMatchObject({ mode: "external", connected: true });
     expect((await api("/modelflare/line", { method: "PUT", body: { line: "cn" } })).status).toBe(409);
-    expect((await api("/modelflare", { method: "PUT", body: { apiKey: "k" } })).status).toBe(404);
-    expect((await api("/modelflare", { method: "DELETE" })).status).toBe(404);
+    expect((await api("/modelflare", { method: "PUT", body: { apiKey: "k" } })).status).toBe(409);
+    expect((await api("/modelflare", { method: "DELETE" })).status).toBe(409);
   });
   it("推理强度：默认自动；改动写入 config.json；不认识的值拒绝", async () => {
     expect((await api("/settings")).json.reasoningEffort).toBe("auto");

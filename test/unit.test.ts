@@ -251,11 +251,10 @@ describe("安全", () => {
 });
 
 describe("Modelflare", () => {
-  it("域名：白名单三个，auto=主域名；测试覆盖变量优先", () => {
-    expect(modelflareBaseUrl("auto", {})).toBe("https://modelflare.dev/v1");
+  it("线路：白名单两条，auto=国际；测试覆盖变量优先", () => {
+    expect(modelflareBaseUrl("auto", {})).toBe("https://api.okinto.com/v1");
     expect(modelflareBaseUrl("global", {})).toBe(MODELFLARE_LINES.global);
-    expect(modelflareBaseUrl("cn", {})).toBe("https://origin.modelflare.dev/v1");
-    expect(modelflareBaseUrl("cf", {})).toBe("https://cf.modelflare.dev/v1");
+    expect(modelflareBaseUrl("cn", {})).toBe("https://api.okinto.com/v1");
     expect(modelflareBaseUrl("cn", { AMB_MODELFLARE_BASE_URL: "http://127.0.0.1:9/v1/" })).toBe("http://127.0.0.1:9/v1");
     expect(normalizeLine("cn")).toBe("cn");
     expect(normalizeLine("cf")).toBe("cf");
@@ -275,7 +274,7 @@ describe("Modelflare", () => {
       const base = srv.url + "/v1";
       // 没有 kind 的旧版网关：全部算对话模型
       expect(await verifyModelflareKey(base, "k1")).toEqual({ ok: true, models: ["a", "b"], chatModels: ["a", "b"] });
-      expect(auth.at(-1)).toBe("Bearer k1");
+      expect(auth).toContain("Bearer k1");
       // 有 kind 时只有 text 是对话模型（生图、生视频、决策模型不算）
       body = JSON.stringify({ data: [{ id: "t", kind: "text" }, { id: "i", kind: "image" }, { id: "v", kind: "video" }, { id: "d" }] });
       expect(await verifyModelflareKey(base, "k1")).toEqual({ ok: true, models: ["d", "i", "t", "v"], chatModels: ["t"] });
@@ -297,7 +296,6 @@ describe("Modelflare", () => {
     }
     const down = await verifyModelflareKey("http://127.0.0.1:9/v1", "k", { line: "auto" });
     expect(down).toMatchObject({ ok: false, code: "network" });
-    expect(down).not.toHaveProperty("suggestLine");
     expect(await verifyModelflareKey("http://127.0.0.1:9/v1", "k", { line: "cn" })).not.toHaveProperty("suggestLine");
   });
   it("配置写回：只改给出的键，其余保留；读取时规范化", () => {

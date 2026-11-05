@@ -21,8 +21,9 @@ export default {
     sameAsChat: "与对话模型相同",
   },
   budget: {
+    playground: "游乐场登录共用账户余额，独立机器人额度请使用 API Key 模式。",
     name: "预算",
-    signedOut: "登录 Modelflare 账户后，可以给这个机器人单独设花费上限",
+    signedOut: "登录 OKINTO New API 账户后，可以给这个机器人单独设花费上限",
     signIn: "去登录",
     off: "与其他机器人共用账户额度，不单独限额",
     on: "单独计算这个机器人的花费，花到上限就停",

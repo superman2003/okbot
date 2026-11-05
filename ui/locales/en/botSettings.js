@@ -21,8 +21,9 @@ export default {
     sameAsChat: "Same as chat model",
   },
   budget: {
+    playground: "Playground sign-in uses the account wallet. Use API key mode for separate bot quotas.",
     name: "Budget",
-    signedOut: "Sign in to Modelflare to set a separate spending limit for this bot",
+    signedOut: "Sign in to OKINTO New API to set a separate spending limit for this bot",
     signIn: "Sign in",
     off: "Shares your account balance with other bots, with no separate limit",
     on: "Tracks this bot's spending separately and stops at the limit",

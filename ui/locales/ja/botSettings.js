@@ -21,7 +21,7 @@ export default {
   },
   "budget": {
     "name": "予算",
-    "signedOut": "Modelflare にログインすると、このボット専用の利用上限を設定できます",
+    "signedOut": "OKINTO New API にログインすると、このボット専用の利用上限を設定できます",
     "signIn": "ログイン",
     "off": "他のボットとアカウント残高を共有し、個別の上限は設けません",
     "on": "このボットの費用を個別に計算し、上限に達すると停止します",
@@ -30,7 +30,9 @@ export default {
     "limit": "上限（USD）",
     "limitSub": "使用済みの金額を含みます。上限を引き上げると自動的に再開されます。",
     "limitLabel": "予算上限（USD）"
-  },
+  ,
+  "playground": "OKINTO アカウントの残高を使用します。Bot ごとの利用枠は設定できません。"
+},
   "perm": {
     "head": "権限",
     "name": "ファイルへのアクセス",

@@ -7,7 +7,7 @@ import { html, Popover, Icon, Seg, Stops } from "./ui.js";
 import { api } from "../lib/api.js";
 import { createStore, useStore, failed } from "../lib/store.js";
 import { t } from "../lib/i18n.js";
-import { OTHER_FAMILY, groupModels, modelFamily, normModel, sameModel, shortModel } from "../lib/models.js";
+import { playgroundSelection, OTHER_FAMILY, groupModels, modelFamily, normModel, sameModel, shortModel } from "../lib/models.js";
 import { DEFAULT_STRATEGY, STRATEGIES, defaultStop, levelOf, tiers } from "../lib/frontier.js";
 
 export { groupModels, normModel, sameModel, shortModel } from "../lib/models.js";
@@ -75,6 +75,7 @@ export function modelNote(info, id) {
   const i = infoFor(info, id);
   if (!i) return "";
   const parts = [];
+  if (i.group) parts.push(`${i.group.name} · ${typeof i.group.ratio === "number" ? i.group.ratio + "×" : i.group.ratio}${i.group.description ? " · " + i.group.description : ""}`);
   if (i.context) parts.push(i.context >= 1e6 ? `${num(i.context / 1e6)}M` : `${Math.round(i.context / 1000)}K`);
   const caps = [i.vision && t("models.caps.vision"), i.tools && t("models.caps.tools"), i.reasoning && t("models.caps.reasoning")].filter(Boolean).join(" ");
   if (caps) parts.push(caps);
@@ -89,7 +90,7 @@ export const familyName = (g) => (g === OTHER_FAMILY ? t("models.otherFamily") :
 const famOpen = new Map();
 export function useFamilies(groups, current) {
   const [, redraw] = useState(0);
-  const curFam = current ? modelFamily(current) : groups[0]?.[0];
+  const curFam = current ? (playgroundSelection(current)?.group || modelFamily(current)) : groups[0]?.[0];
   const isOpen = (g) => famOpen.get(g) ?? g === curFam;
   const toggle = (g) => {
     famOpen.set(g, !isOpen(g));
@@ -238,10 +239,12 @@ function ModelList({ models, error, current, onPick, onClose, reset, foot, onRet
   useEffect(() => {
     if (onBack) searchRef.current?.focus();
   }, []);
-  const groups = useMemo(() => groupModels(models || [], q), [models, q]);
+  const [selectedGroup, setSelectedGroup] = useState(playgroundSelection(current)?.group || "");
+  const availableGroups = useMemo(() => [...new Set((models || []).map((m) => playgroundSelection(m)?.group).filter(Boolean))].sort(), [models]);
+  const groups = useMemo(() => groupModels((models || []).filter((m) => !selectedGroup || playgroundSelection(m)?.group === selectedGroup), q), [models, q, selectedGroup]);
   const { isOpen, toggle } = useFamilies(groups, current);
   const folding = !q.trim() && groups.length > 1;
-  const custom = q.trim() && !(models || []).some((m) => sameModel(m, q.trim())) ? q.trim() : "";
+  const custom = !availableGroups.length && q.trim() && !(models || []).some((m) => sameModel(m, q.trim())) ? q.trim() : "";
   const flat = [
     ...(reset && !q ? [{ reset: true }] : []),
     ...groups.flatMap(([g, ms]) => {
@@ -313,6 +316,12 @@ function ModelList({ models, error, current, onPick, onClose, reset, foot, onRet
       : html`<${Icon} name="search" size="sm" />`}
       <input ref=${searchRef} placeholder=${t("models.filterOrId")} value=${q} onInput=${(e) => { setQ(e.target.value); setSel(0); }} onKeyDown=${onKey} aria-label=${t("models.filter")} />
     </div>
+    ${availableGroups.length > 0 && html`<div class="model-group-filter"><label class="k" for="model-group">${t("models.group")}</label>
+      <div class="model-group-select">
+        <select id="model-group" class="pick" value=${selectedGroup} onChange=${(e) => { setSelectedGroup(e.target.value); setSel(0); }}>
+          <option value="">${t("models.allGroups")}</option>${availableGroups.map((g) => html`<option value=${g}>${g}</option>`)}
+        </select><${Icon} name="chevDown" size="xs" />
+      </div></div>`}
     <ul role="listbox" ref=${listRef}>
       ${models === null && !error && [0, 1, 2, 3, 4].map((k) => html`<li key=${k}><span class="skel" style=${{ width: 60 + ((k * 37) % 30) + "%" }}></span></li>`)}
       ${error && html`<li class="explained" style="pointer-events:auto"><span class="v" style="white-space:normal;color:var(--red)">${t("models.loadFailed", { error })}</span>

@@ -1,7 +1,7 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
   external_mode:
-    "При использовании внешнего адреса модели подключения Modelflare не управляются",
+    "При использовании внешнего адреса модели подключения OKINTO New API не управляются",
   bot_not_found: "Бот не найден",
   magpie_failed: "Не удалось запустить magpie: {message}",
   default_bot_name: "Мой помощник",
@@ -27,6 +27,6 @@ export default {
   media_not_downloaded: "{label} (не удалось скачать: {error})",
   weixinExpiredSubject: "Срок входа в WeChat истёк",
   data_dir_locked:
-    "Другой процесс anymodel bot ({who}) использует папку данных {dir}. Закройте его или задайте другую папку данных (AMB_DATA_DIR).",
+    "Другой процесс okbot ({who}) использует папку данных {dir}. Закройте его или задайте другую папку данных (AMB_DATA_DIR).",
   data_dir_locked_remote: "pid {pid} на {host}",
 } satisfies TranslatedCatalog["app"];

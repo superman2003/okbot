@@ -4,6 +4,14 @@
 
 This covers changes you'll notice in the app. For older versions, see the [GitHub releases](https://github.com/modelflare-ai/AnyModelBot/releases).
 
+## 0.1.24 - 2026-11-05
+
+### Fixed
+
+- Restored the OKINTO New API integration omitted from the previous release. The default endpoint is api.okinto.com, with desktop OKINTO sign-in and site API key support.
+- Restored wallet balance, grouped model selection, pricing and image generation while retaining official provider API keys and catalog bots.
+- Installers, windows and interface labels now use okbot / OKINTO. Update checks use this repository.
+
 ## 0.1.23 - 2026-11-05
 
 ### Improvements

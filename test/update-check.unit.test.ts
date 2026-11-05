@@ -6,7 +6,7 @@ import { App, appVersion, type DesktopHooks } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { UpdateChecker, installerSuffix, isNewer } from "../src/update-check.js";
 
-const BASE = "https://github.com/modelflare-ai/AnyModelBot/releases";
+const BASE = "https://github.com/wmn1525/AnyModelBot/releases";
 const ALL_ASSETS = ["win-x64.exe", "win-arm64.exe", "mac-x64.dmg", "mac-arm64.dmg", "linux-x86_64.AppImage", "linux-arm64.AppImage"].map((s) => ({
   name: `anymodel-bot-0.2.0-${s}`,
   browser_download_url: `${BASE}/download/v0.2.0/anymodel-bot-0.2.0-${s}`,
@@ -75,7 +75,7 @@ describe("检查新版本", () => {
     const send = vi.fn(reply(release()));
     await checker(send).check();
     const [url, init] = send.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe("https://api.github.com/repos/modelflare-ai/AnyModelBot/releases/latest");
+    expect(url).toBe("https://api.github.com/repos/wmn1525/AnyModelBot/releases/latest");
     expect(init.headers).toEqual({ Accept: "application/vnd.github+json", "User-Agent": "anymodel-bot/0.1.16" });
     expect(init.body).toBeUndefined();
   });

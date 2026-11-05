@@ -13,6 +13,7 @@ import { qualityFor, type QualitySnapshot } from "./model-quality.js";
 import type { RoutingStrategy } from "./client.js";
 
 export interface ModelInfo {
+  group?: { name: string; description: string; ratio: number | string };
   context?: number;
   vision?: boolean;
   tools?: boolean;
@@ -118,7 +119,7 @@ export function referencePrice(entry: PricingEntry, catalog: PricingCatalog): Mo
  * 阶梯计费的取基础那一档（没有条件的那档，长上下文更贵的那档不算：估算写「约」，账单为准）。按次计费的不给。
  */
 export function estimateRates(entry: PricingEntry, catalog: PricingCatalog): Rates | undefined {
-  if (entry.quota_type !== 0) return undefined;
+  if (entry.quota_type !== 0 || (entry.billing_mode && !entry.pricing_rules)) return undefined;
   const factor = factorOf(entry, catalog);
   if (factor === undefined) return undefined;
   const tiers = (entry.pricing_rules as { tiers?: Array<{ conditions?: unknown; unit_prices?: Record<string, unknown> }> } | undefined)?.tiers;
@@ -206,6 +207,8 @@ export async function loadModelInfo(o: {
   /** Artificial Analysis 快照（assets/model-quality.json） */
   quality?: QualitySnapshot;
   fetchImpl?: typeof fetch;
+  /** New API publishes endpoint/price metadata through /api/pricing. */
+  profiles?: boolean;
 }): Promise<Record<string, ModelInfo>> {
   const f = o.fetchImpl ?? fetch;
   const get = async <T>(url: string, headers: Record<string, string>): Promise<T | undefined> => {
@@ -217,7 +220,7 @@ export async function loadModelInfo(o: {
     }
   };
   const [profiles, catalog] = await Promise.all([
-    o.apiKey ? get<{ data?: Record<string, Profile> }>(`${o.baseUrl}/model-profiles`, { Authorization: `Bearer ${o.apiKey}`, ...o.headers }) : undefined,
+    o.apiKey && o.profiles !== false ? get<{ data?: Record<string, Profile> }>(`${o.baseUrl}/model-profiles`, { Authorization: `Bearer ${o.apiKey}`, ...o.headers }) : undefined,
     get<PricingCatalog>(o.pricingUrl, {}),
   ]);
   const out: Record<string, ModelInfo> = {};

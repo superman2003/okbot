@@ -10,7 +10,7 @@ import { PickModel, effortOptions, setEffort, shortModel, showsStrategy, strateg
 import { DomainConnection } from "../components/domain-connection.js";
 import { NotificationsSheet, UsageSheet } from "./account.js";
 import { api } from "../lib/api.js";
-import { MF_CONSOLE, MF_DOCS_LINK, MF_TOPUP, usd } from "../lib/links.js";
+import { MF_CONSOLE, MF_DOCS_LINK, MF_TOPUP, usd, accountBalance } from "../lib/links.js";
 import { useStore, confirmSheet, failed, saved, toast } from "../lib/store.js";
 import { guide, resetGuide, visibleSteps } from "../lib/guide.js";
 import { themeMode, setThemeMode } from "../lib/theme.js";
@@ -20,7 +20,7 @@ import { TroubleshootPane } from "./troubleshoot.js";
 import { ConnectionSheets, connectionRows, useConnections } from "./connections.js";
 import { PwshHint } from "../components/pwsh-hint.js";
 import { OfficialKeyForm, officialName } from "../components/official-keys.js";
-import { AccountLogin } from "./onboarding.js";
+import { AccountLogin, KeyForm, lineOptions } from "./onboarding.js";
 import { t, has, useLang, getLangPref, onLangChange, changeLang, LANGS, LANG_NAMES } from "../lib/i18n.js";
 import { fmtTimeOfDay } from "../lib/format.js";
 
@@ -207,6 +207,7 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   const [s, setS] = useState(null);
   const g = useStore(guide);
   const effort = useEffort();
+  const [rekey, setRekey] = useState(false);
   const [notices, setNotices] = useState(false);
   const [sheet, setSheet] = useState(""); // usage | notifications | login
   // 官方 API：各家的连接状态；keySheet 是正在填 Key 的那一家
@@ -258,6 +259,15 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       saved();
     } catch (e) {
       setS(prev);
+      failed(e);
+    }
+  };
+  const disconnect = async () => {
+    if (!(await confirmSheet({ title: t("settings.disconnect.title"), body: t("settings.disconnect.body"), confirmLabel: t("settings.disconnect.confirm"), danger: true }))) return;
+    try {
+      await api("/modelflare", { method: "DELETE" });
+      onMfChanged();
+    } catch (e) {
       failed(e);
     }
   };
@@ -347,8 +357,8 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
   // 登录后才有邀请码和通知；进入模型分页时读一次
   useEffect(() => {
     if (!signedIn || tab !== "modelflare") return;
-    api("/account/invite").then(setInvite).catch(() => setInvite(null));
-    api("/account/notifications").then((r) => setUnread(r.data ? r.data.unread_count : null)).catch(() => setUnread(null));
+    if (acct.capabilities?.invite !== false) api("/account/invite").then(setInvite).catch(() => setInvite(null));
+    if (acct.capabilities?.notifications !== false) api("/account/notifications").then((r) => setUnread(r.data ? r.data.unread_count : null)).catch(() => setUnread(null));
   }, [signedIn, tab]);
 
   // —— 行定义：每行一个稳定 id，可被搜索、可被深链（#/settings/<tab>/<id>）——
@@ -400,39 +410,47 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       { tab: "appearance", id: "reset-appearance", name: t("settings.rows.resetAppearance.name"), sub: desktop ? t("settings.rows.resetAppearance.subDesktop") : t("settings.rows.resetAppearance.sub"), keys: t("settings.rows.resetAppearance.keys"),
         ctl: html`<button type="button" class="text" disabled=${!customized} onClick=${resetLook}>${t("settings.rows.resetAppearance.button")}</button>` },
 
-      managed && acct && { tab: "modelflare", searchOnly: true, id: "account", name: t("settings.rows.account.name"),
-        sub: signedIn ? (acct.billedToEnterprise ? t("settings.rows.account.enterprise", { name: acctName }) : acctName) : acct.state === "unavailable" ? acct.error : t("settings.rows.account.signedOut"), keys: t("settings.rows.account.keys"),
+      managed && acct && { tab: "modelflare", id: "account", name: t("settings.rows.account.name"),
+        sub: signedIn ? (acct.billedToEnterprise ? t("settings.rows.account.enterprise", { name: acctName }) : acctName) : acct.state === "unavailable" ? acct.error : t(acct.loginMethod === "newapi-playground" ? "settings.rows.account.signedOut" : "settings.rows.account.apiKey"), keys: t("settings.rows.account.keys"),
         ctl: signedIn
           ? html`<button type="button" class="text danger" onClick=${logout}>${t("settings.rows.account.logout")}</button>`
-          : acct.state === "signed_out" ? html`<button type="button" class="btn" onClick=${() => setSheet("login")}>${t("settings.rows.account.login")}</button>` : null },
-      !managed && { tab: "modelflare", id: "connection", name: t("settings.rows.connection.name"), sub: t("settings.rows.connection.subExternal"), keys: "",
-        ctl: html`<span class="val" title=${mf && mf.baseUrl}>${mf && mf.baseUrl}</span>` },
-      managed && acct && mf.connected && { tab: "modelflare", searchOnly: true, id: "balance", name: t("settings.rows.balance.name"),
-        sub: acct.error ? t("settings.rows.balance.error", { error: acct.error }) : acct.updatedAt ? t("settings.rows.balance.updated", { time: fmtTimeOfDay(acct.updatedAt) }) : t("common.reading"), keys: t("settings.rows.balance.keys"),
-        ctl: html`${acct.lowBalance && html`<span class="dot warn"></span>`}<span class="balance">${usd(acct.balanceUsd)}</span>
+          : acct.loginAvailable === false
+            ? html`<span class="val">${t("settings.rows.account.noBrowserLogin")}</span>`
+            : html`<button type="button" class="text accent" onClick=${() => setSheet("login")}>${t("settings.rows.account.login")}</button>` },
+      { tab: "modelflare", id: "connection", name: signedIn ? t("settings.rows.connection.nameSignedIn") : t("settings.rows.connection.name"),
+        sub: !managed ? t("settings.rows.connection.subExternal") : signedIn ? acct.loginMethod === "newapi-playground" ? t("settings.rows.connection.playground") : t("settings.rows.connection.subSignedIn") : t("settings.rows.connection.sub"), keys: t("settings.rows.connection.keys"),
+        ctl: managed
+          ? html`<span class="mf-state"><span class=${`dot ${mf.connected ? "ok" : "err"}`}></span>${mf.connected ? t("common.connected") : t("common.notConnected")}</span>
+              ${mf.keyTail && html`<span class="val">••••${mf.keyTail}</span>`}
+              ${!signedIn && html`<button type="button" class="text" onClick=${() => setRekey(true)}>${t("settings.rows.connection.rekey")}</button>
+                <button type="button" class="text danger" onClick=${disconnect}>${t("settings.rows.connection.disconnect")}</button>`}`
+          : html`<span class="val" title=${mf && mf.baseUrl}>${mf && mf.baseUrl}</span>` },
+      managed && acct && mf.connected && { tab: "modelflare", id: "balance", name: t("settings.rows.balance.name"),
+        sub: acct.error ? t("settings.rows.balance.error", { error: acct.error }) : acct.source === "key" ? t(`settings.rows.balance.${acct.balanceScope === "token" ? "fromToken" : acct.balanceScope === "account" ? "fromAccount" : "fromKey"}`) : acct.updatedAt ? t("settings.rows.balance.updated", { time: fmtTimeOfDay(acct.updatedAt) }) : t("common.reading"), keys: t("settings.rows.balance.keys"),
+        ctl: html`<span class=${`balance${acct.lowBalance ? " low" : ""}`}>${accountBalance(acct)}</span>
           <button type="button" class="icon-btn" title=${t("common.refresh")} aria-label=${t("settings.rows.balance.refresh")} onClick=${refreshBalance}><${Icon} name="refresh" size="sm" /></button>
           <a class="btn" href=${MF_TOPUP} target="_blank" rel="noopener noreferrer">${t("settings.rows.balance.topUp")}</a>` },
-      managed && acct && mf.connected && { tab: "modelflare", group: "account", id: "low-balance", name: t("settings.rows.lowBalance.name"), sub: t("settings.rows.lowBalance.sub"), keys: t("settings.rows.lowBalance.keys"),
+      managed && acct?.loginMethod !== "newapi-playground" && acct && mf.connected && { tab: "modelflare", id: "low-balance", name: t("settings.rows.lowBalance.name"), sub: t("settings.rows.lowBalance.sub"), keys: t("settings.rows.lowBalance.keys"),
         ctl: html`<${Seg} label=${t("settings.rows.lowBalance.name")} value=${acct.alerts.lowBalanceUsd} onChange=${(v) => putAlerts({ lowBalanceUsd: v })}
           options=${alertLines.some(([v]) => v === acct.alerts.lowBalanceUsd) ? alertLines : [...alertLines, [acct.alerts.lowBalanceUsd, usd(acct.alerts.lowBalanceUsd)]]} />` },
-      managed && acct && mf.connected && acct.alerts.lowBalanceUsd > 0 && { tab: "modelflare", group: "account", id: "low-balance-push", name: t("settings.rows.lowBalancePush.name"), sub: t("settings.rows.lowBalancePush.sub"), keys: t("settings.rows.lowBalancePush.keys"),
+      managed && acct?.loginMethod !== "newapi-playground" && acct && mf.connected && acct.alerts.lowBalanceUsd > 0 && { tab: "modelflare", id: "low-balance-push", name: t("settings.rows.lowBalancePush.name"), sub: t("settings.rows.lowBalancePush.sub"), keys: t("settings.rows.lowBalancePush.keys"),
         ctl: html`<${Switch} label=${t("settings.rows.lowBalancePush.name")} value=${acct.alerts.push} onChange=${(v) => putAlerts({ lowBalancePush: v })} />` },
-      signedIn && { tab: "modelflare", group: "account", id: "usage", name: t("settings.rows.usage.name"), sub: t("settings.rows.usage.sub"), keys: t("settings.rows.usage.keys"),
+      signedIn && acct.capabilities?.usage !== false && { tab: "modelflare", id: "usage", name: t("settings.rows.usage.name"), sub: t("settings.rows.usage.sub"), keys: t("settings.rows.usage.keys"),
         ctl: html`<button type="button" class="text" onClick=${() => setSheet("usage")}>${t("common.view")}</button>` },
-      signedIn && { tab: "modelflare", group: "account", id: "notifications", name: t("settings.rows.notifications.name"), sub: unread ? t("settings.rows.notifications.unread", { count: unread }) : t("settings.rows.notifications.sub"), keys: t("settings.rows.notifications.keys"),
+      signedIn && acct.capabilities?.notifications !== false && { tab: "modelflare", id: "notifications", name: t("settings.rows.notifications.name"), sub: unread ? t("settings.rows.notifications.unread", { count: unread }) : t("settings.rows.notifications.sub"), keys: t("settings.rows.notifications.keys"),
         ctl: html`<button type="button" class="text" onClick=${() => setSheet("notifications")}>${t("common.view")}</button>` },
       signedIn && invite && { tab: "modelflare", group: "account", id: "invite", name: t("settings.rows.invite.name"), sub: t("settings.rows.invite.sub"), keys: t("settings.rows.invite.keys"),
         ctl: html`<span class="val">${invite.code}</span><${CopyButton} text=${invite.url} label=${t("settings.rows.invite.copy")} />` },
-      (!managed || mf.connected) && { tab: "modelflare", group: "account", id: "console", name: t("settings.rows.console.name"), sub: t("settings.rows.console.sub"), keys: t("settings.rows.console.keys"),
-        ctl: html`<a class="text" href=${MF_CONSOLE} target="_blank" rel="noopener noreferrer">${t("common.openExternal")}</a>` },
-      { tab: "modelflare", group: "models", id: "default-model", name: t("settings.rows.defaultModel.name"), sub: t("settings.rows.defaultModel.sub"), keys: t("settings.rows.defaultModel.keys"),
+      managed && acct?.loginMethod !== "newapi-playground" && acct?.loginAvailable && { tab: "modelflare", id: "line", name: t("settings.rows.line.name"), sub: t("settings.rows.line.sub"), keys: t("settings.rows.line.keys"),
+        ctl: html`<${Seg} label=${t("settings.rows.line.name")} value=${mf.line} onChange=${setLine} options=${lineOptions()} />` },
+      { tab: "modelflare", id: "default-model", name: t("settings.rows.defaultModel.name"), sub: t("settings.rows.defaultModel.sub"), keys: t("settings.rows.defaultModel.keys"),
         ctl: html`<${PickModel} value=${s.defaultModel} models=${models} modelsError=${modelsError} reloadModels=${reloadModels} resetLabel=${t("settings.rows.defaultModel.auto")}
           onChange=${(m) => put({ defaultModel: m }, { defaultModel: m })} />` },
-      managed && mf.connected && { tab: "modelflare", group: "models", id: "image-model", name: t("settings.rows.imageModel.name"), sub: t("settings.rows.imageModel.sub"), keys: t("settings.rows.imageModel.keys"),
+      managed && acct?.capabilities?.media !== false && mf.connected && { tab: "modelflare", id: "image-model", name: t("settings.rows.imageModel.name"), sub: t("settings.rows.imageModel.sub"), keys: t("settings.rows.imageModel.keys"),
         ctl: html`<${PickModel} value=${s.imageModel} models=${media ? media.image : null} modelsError=${media && media.error} reloadModels=${loadMedia}
           resetLabel=${media && media.recommended.image ? t("settings.rows.autoModel", { model: shortModel(media.recommended.image) }) : t("common.auto")} label=${t("settings.rows.imageModel.name")}
           onChange=${(m) => put({ imageModel: m }, { imageModel: m })} />` },
-      managed && mf.connected && { tab: "modelflare", group: "models", id: "video-model", name: t("settings.rows.videoModel.name"), sub: t("settings.rows.videoModel.sub"), keys: t("settings.rows.videoModel.keys"),
+      managed && acct?.capabilities?.media !== false && mf.connected && { tab: "modelflare", id: "video-model", name: t("settings.rows.videoModel.name"), sub: t("settings.rows.videoModel.sub"), keys: t("settings.rows.videoModel.keys"),
         ctl: html`<${PickModel} value=${s.videoModel} models=${media ? media.video : null} modelsError=${media && media.error} reloadModels=${loadMedia}
           resetLabel=${media && media.recommended.video ? t("settings.rows.autoModel", { model: shortModel(media.recommended.video) }) : t("common.auto")} label=${t("settings.rows.videoModel.name")}
           onChange=${(m) => put({ videoModel: m }, { videoModel: m })} />` },
@@ -456,8 +474,6 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
             },
           ]
         : []),
-      managed && mf.connected && { tab: "modelflare", group: "line", id: "line", name: t("settings.rows.line.name"), sub: t("settings.rows.line.sub"), keys: t("settings.rows.line.keys"),
-        ctl: html`<${DomainConnection} value=${mf.line} onChange=${setLine} />` },
 
       { tab: "computer", id: "cu-status", name: t("settings.rows.cuStatus.name"), sub: cu ? cu.reason : t("common.reading"), keys: t("settings.rows.cuStatus.keys"),
         ctl: cu && html`<span class=${`badge ${cu.available ? "ok" : "err"}`}>${t(cu.available ? "settings.rows.cuStatus.ready" : "settings.rows.cuStatus.notReady")}</span>` },
@@ -505,8 +521,8 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       // 故障排查页是单独的面板（troubleshoot.js），这一行只给搜索用：搜"日志""测试模型"时能找到入口
       { tab: "troubleshoot", id: "troubleshoot", name: t("settings.tabs.troubleshoot"), sub: t("settings.rows.troubleshoot.sub"), keys: t("settings.rows.troubleshoot.keys"),
         ctl: html`<button type="button" class="text" onClick=${() => { setQ(""); onTab?.("troubleshoot"); }}>${t("common.open")}</button>` },
-      { tab: "about", id: "links", name: "Modelflare", sub: t("settings.rows.links.sub"),
-        ctl: html`<a class="text" href=${MF_CONSOLE} target="_blank" rel="noopener noreferrer">modelflare.dev ↗</a><a class="text" href=${MF_DOCS_LINK} target="_blank" rel="noopener noreferrer">${t("settings.rows.links.docs")}</a>` },
+      { tab: "about", id: "links", name: "OKINTO New API", sub: t("settings.rows.links.sub"),
+        ctl: html`<a class="text" href=${MF_CONSOLE} target="_blank" rel="noopener noreferrer">api.okinto.com ↗</a><a class="text" href=${MF_DOCS_LINK} target="_blank" rel="noopener noreferrer">${t("settings.rows.links.docs")}</a>` },
     ].filter(Boolean);
   }, [s, mf, mode, p, models, modelsError, cu, status, update, bots, acct, invite, unread, g, media, lang, langPref, conn.accounts, conn.channelAccounts, effort, official]);
 
@@ -536,6 +552,9 @@ export function SettingsScreen({ tab, query: q, onQuery: setQ, onTab, focusRow, 
       ${s && !needle && tab === "troubleshoot" ? html`<${TroubleshootPane} bots=${bots} desktop=${desktop} />` : parts.map(({ label, note, rows: list }) => html`${label && html`<div class="set-part">${label}</div>`}${note && html`<p class="set-note">${note}</p>`}
         <div class="list">${list.map((r) => r.custom || html`<${Row} key=${r.id} id=${r.id} name=${r.name} sub=${r.sub} title=${r.title || r.sub} flash=${flash === r.id || conn.fresh === r.id}>${r.ctl}<//>`)}</div>`)}
     </div>
+    ${rekey && html`<${Sheet} title=${t("settings.rekey.title")} onClose=${() => setRekey(false)}>
+      <${KeyForm} line=${mf.line} showLine=${false} submitLabel=${t("settings.rekey.submit")} onConnected=${() => { setRekey(false); saved(); onMfChanged(); reloadModels(); }} />
+    <//>`}
     ${notices && html`<${NoticesSheet} onClose=${() => setNotices(false)} />`}
     <${ConnectionSheets} conn=${conn} bots=${bots} />
     ${sheet === "usage" && html`<${UsageSheet} onClose=${() => setSheet("")} />`}

@@ -3,7 +3,15 @@
 /** 内置网关列出的模型带 "modelflare/" 前缀，Modelflare 直接列出的不带；两种写法都能调用，显示与比较时去掉它 */
 export const normModel = (m) => (m && m.startsWith("modelflare/") ? m.slice("modelflare/".length) : m || "");
 export const sameModel = (a, b) => !!a && !!b && normModel(a) === normModel(b);
-export const shortModel = (m) => (m && m.includes("/") ? m.slice(m.lastIndexOf("/") + 1) : m);
+export function playgroundSelection(id) {
+  const match = normModel(id).match(/^(?:okinto|newapi)\/([^/]+)\/(.+)$/i);
+  if (!match) return null;
+  try { return { group: decodeURIComponent(match[1]), model: match[2] }; } catch { return null; }
+}
+export const shortModel = (m) => {
+  const selected = playgroundSelection(m);
+  return selected ? `${selected.model} · ${selected.group}` : m && m.includes("/") ? m.slice(m.lastIndexOf("/") + 1) : m;
+};
 
 /** 官方 API 的模型 id 是 official-<厂商>/<模型>（src/official-providers.ts）；这张表只管显示，test/official-providers.unit.test.ts 核对它和服务端的表一致 */
 const OFFICIAL_NAMES = {
@@ -48,7 +56,7 @@ export const OTHER_FAMILY = "other";
 const ORDER = [...FAMILIES.map(([f]) => f), OTHER_FAMILY];
 
 export function modelFamily(id) {
-  const n = (shortModel(normModel(id)) || "").toLowerCase();
+  const n = (playgroundSelection(id)?.model || shortModel(normModel(id)) || "").toLowerCase();
   return FAMILIES.find(([, re]) => re.test(n))?.[0] ?? OTHER_FAMILY;
 }
 
@@ -79,15 +87,19 @@ export function groupModels(models, q = "") {
   const needle = q.trim().toLowerCase();
   const groups = new Map();
   for (const m of models) {
-    const n = normModel(m);
+    const selected = playgroundSelection(m);
+    const n = selected ? `${selected.group}/${selected.model}` : normModel(m);
     if (needle && !n.toLowerCase().includes(needle)) continue;
-    const f = modelFamily(m);
+    const f = selected ? selected.group : modelFamily(m);
     if (!groups.has(f)) groups.set(f, []);
     // 官方 API 的模型写明是哪一家：同一个模型可能既有 Modelflare 的也有官方的，走的是两条路、两份账单
     const source = officialSource(m);
-    const label = n.includes("/") ? n.slice(n.indexOf("/") + 1) : n;
+    const label = selected ? selected.model : n.includes("/") ? n.slice(n.indexOf("/") + 1) : n;
     groups.get(f).push([m, source ? `${label} · ${source}` : label]);
   }
   for (const ms of groups.values()) ms.sort((a, b) => newerFirst(a[1], b[1]));
-  return [...groups.entries()].sort((a, b) => ORDER.indexOf(a[0]) - ORDER.indexOf(b[0]));
+  return [...groups.entries()].sort((a, b) => {
+    const x = ORDER.indexOf(a[0]), y = ORDER.indexOf(b[0]);
+    return x < 0 || y < 0 ? a[0].localeCompare(b[0]) : x - y;
+  });
 }

@@ -5,7 +5,9 @@
 这份文档给想从源码运行、打包或参与开发的人看。普通用户直接从 [Releases](https://github.com/modelflare-ai/AnyModelBot/releases) 下载安装包即可，见 [README](../README.md#-下载)。
 
 - 一个机器人 = 人设 + 默认模型 + 记忆。账号是全局的（设置 › 连接），所有机器人共用，同一个服务可以加多个。定位：自用、单用户。
-- 模型来自 Modelflare 账户或用户自己的官方 API Key。[Modelflare](https://modelflare.dev/?utm_source=anymodelbot&utm_campaign=amb_readme)：首次启动登录（或注册）Modelflare 账户，模型自动列出。请求经过内置的 [magpie](https://github.com/yetone/magpie) 网关转发。
+- 默认网关是 **OKINTO New API**。桌面版在隔离的 Electron session 分区登录 OKINTO；复用 New API 游乐场的短期 Dashboard access token 自动刷新，并按所选分组经 `/pg/chat/completions` 调用。账户余额读取登录用户钱包，各可用分组的模型清单分别读取 `/api/user/models?group=…`；工具、多模态消息和分组字段透传。登录 cookie 留在 Chromium session，不保存账户密码、refresh cookie 或 access token 到 AnyModelBot 数据库。
+- 模型内部 ID 保留分组，避免同名模型串组；筛选器按分组展示，同一模型的价格按各分组倍率计算。New API 登录模式支持生图：聊天格式的图片模型经 `/pg/chat/completions` 调用；Images API 与 Gemini 原生接口按需创建仅限所选分组和模型的临时令牌，调用完成或失败后撤销，最长 15 分钟过期，密钥只留在宿主内存。图片模型与价格取自当前账户可用分组及 `/api/pricing`，结果保存在机器人工作区 `media/`，通过 `present` 交付。站点须允许创建及读取令牌；机器人独立额度、通知、邀请和视频生成暂不可用。也可改用 API Key 直连模式。
+- New API 的 API Key 直连仍支持 OpenAI 兼容调用及站点余额接口。可用 `AMB_NEWAPI_BASE_URL` 覆盖站点地址（根地址或带 `/v1` 均可）；桌面开发版运行 `npm run electron:dev`。
 - 三种运行方式，同一套代码：**桌面版（Electron）**、**命令行 `npm start`**、**Docker**。
 
 ## 目录结构

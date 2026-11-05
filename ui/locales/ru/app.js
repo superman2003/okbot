@@ -35,7 +35,7 @@ export default {
     langKeys: "язык русский английский китайский японский корейский",
     switchBot: "Переключиться на «{name}»",
   },
-  lowBalance: "На счёте Modelflare осталось ${amount}",
+  lowBalance: "На счёте OKINTO New API осталось ${amount}",
   serviceDown: "Не удалось подключиться к локальному сервису: {error}",
   resizeSide: "Изменить ширину боковой панели",
   resizePanel: "Изменить ширину панели сведений",

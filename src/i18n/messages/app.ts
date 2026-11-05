@@ -2,7 +2,7 @@
 import type { Catalog } from "../types.js";
 
 export const zh = {
-  external_mode: "外部模型端点模式下不管理 Modelflare 连接",
+  external_mode: "外部模型端点模式下不管理 OKINTO New API 连接",
   bot_not_found: "机器人不存在",
   magpie_failed: "magpie 启动失败：{message}",
   // 第一次启动时建的机器人（按当时的语言）
@@ -26,12 +26,12 @@ export const zh = {
   media_not_downloaded: "{label}（未能下载：{error}）",
   weixinExpiredSubject: "微信登录已过期",
   // 数据目录锁（store/lock.ts）：同一个数据目录只能有一个宿主
-  data_dir_locked: "数据目录 {dir} 正被另一个 anymodel bot 进程使用（{who}）。先退出它，或者换一个数据目录（AMB_DATA_DIR）。",
+  data_dir_locked: "数据目录 {dir} 正被另一个 okbot 进程使用（{who}）。先退出它，或者换一个数据目录（AMB_DATA_DIR）。",
   data_dir_locked_remote: "{host} 上的 pid {pid}",
 } satisfies Catalog;
 
 export const en: Catalog<typeof zh> = {
-  external_mode: "Modelflare connections aren't managed when using an external model endpoint",
+  external_mode: "OKINTO New API connections aren't managed when using an external model endpoint",
   bot_not_found: "Bot not found",
   magpie_failed: "magpie failed to start: {message}",
   default_bot_name: "My Assistant",
@@ -52,6 +52,6 @@ export const en: Catalog<typeof zh> = {
   media_voice: "[Voice]",
   media_not_downloaded: "{label} (couldn't download: {error})",
   weixinExpiredSubject: "WeChat sign-in expired",
-  data_dir_locked: "Another anymodel bot process ({who}) is using the data directory {dir}. Quit it, or use another data directory (AMB_DATA_DIR).",
+  data_dir_locked: "Another okbot process ({who}) is using the data directory {dir}. Quit it, or use another data directory (AMB_DATA_DIR).",
   data_dir_locked_remote: "pid {pid} on {host}",
 };

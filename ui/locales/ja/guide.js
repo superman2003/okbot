@@ -20,7 +20,7 @@ export default {
   "closeCoach": "ガイドを閉じる",
   "doneTitle": "準備完了です！",
   "fill": "入力する",
-  "openConsole": "Modelflare コンソールで画像モデルを有効にする ↗",
+  "openConsole": "OKINTO New API コンソールで画像モデルを有効にする ↗",
   "later": "後で",
   "stopHere": "ここまでにする",
   "next": "次へ：{title}",

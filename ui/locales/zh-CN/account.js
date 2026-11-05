@@ -1,5 +1,9 @@
 // account · zh-CN（screens/account.js）
 export default {
+  login: {
+    title: "登录 OKINTO New API 账户",
+    hint: "登录后会替换现在填的 API Key。",
+  },
   usage: {
     title: "用量",
     days: "{n} 天",
@@ -12,7 +16,7 @@ export default {
     empty: "这段时间没有用量",
   },
   notifications: {
-    title: "Modelflare 通知",
+    title: "OKINTO New API 通知",
     empty: "没有通知",
     details: "查看详情 ↗",
   },

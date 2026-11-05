@@ -7,7 +7,7 @@ import { logger } from "./log.js";
 
 const log = logger("update");
 
-const REPO = "modelflare-ai/AnyModelBot";
+const REPO = "wmn1525/AnyModelBot";
 const LATEST_API = `https://api.github.com/repos/${REPO}/releases/latest`;
 /** 这些地址会在系统浏览器里打开，所以只认这个仓库的发布页和安装包 */
 const RELEASES = `https://github.com/${REPO}/releases/`;

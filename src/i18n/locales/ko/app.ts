@@ -1,6 +1,6 @@
 import type { TranslatedCatalog } from "../../index.js";
 export default {
-  "external_mode": "외부 모델 엔드포인트를 사용할 때는 Modelflare 연결을 관리하지 않습니다",
+  "external_mode": "외부 모델 엔드포인트를 사용할 때는 OKINTO New API 연결을 관리하지 않습니다",
   "bot_not_found": "봇을 찾을 수 없습니다",
   "magpie_failed": "magpie를 시작하지 못했습니다: {message}",
   "default_bot_name": "내 도우미",
@@ -21,6 +21,6 @@ export default {
   "media_voice": "[음성]",
   "media_not_downloaded": "{label}(다운로드 실패: {error})",
   "weixinExpiredSubject": "WeChat 로그인 만료",
-  "data_dir_locked": "다른 anymodel bot 프로세스({who})가 데이터 폴더 {dir}을(를) 사용하고 있습니다. 해당 프로세스를 종료하거나 다른 데이터 폴더(AMB_DATA_DIR)를 사용하세요.",
+  "data_dir_locked": "다른 okbot 프로세스({who})가 데이터 폴더 {dir}을(를) 사용하고 있습니다. 해당 프로세스를 종료하거나 다른 데이터 폴더(AMB_DATA_DIR)를 사용하세요.",
   "data_dir_locked_remote": "{host}의 pid {pid}"
 } satisfies TranslatedCatalog["app"];

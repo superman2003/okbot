@@ -11,6 +11,8 @@
  */
 import { app, BrowserWindow, Menu, Notification, Tray, nativeImage, nativeTheme, net, powerMonitor, session, shell, dialog, safeStorage } from "electron";
 import crypto from "node:crypto";
+import { newApiDesktop } from "./newapi-login.js";
+import { modelflareIssuer } from "../src/modelflare.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -48,7 +50,7 @@ function showWindow(): void {
   win.focus();
 }
 
-const PRODUCT = "AnyModelBot";
+const PRODUCT = "okbot";
 const canAutostart = process.platform === "darwin" || process.platform === "win32";
 
 // Windows：也不要系统标题栏，侧栏顶部那一行就是标题栏——左上角是应用图标 + 名称（Windows 的习惯；macOS 那里是红绿灯），
@@ -218,6 +220,7 @@ async function boot(): Promise<void> {
   registerSecret(config.ui.token);
   core = new App(config);
   core.desktop = {
+    newapi: newApiDesktop(modelflareIssuer(), dataDir),
     autostart: () => ({ supported: canAutostart, on: canAutostart && app.getLoginItemSettings().openAtLogin }),
     setAutostart,
     applyZoom: (z) => {
@@ -269,14 +272,19 @@ async function smoke(out: string): Promise<void> {
     let screen = "";
     for (let i = 0; i < 50; i++) {
       screen = String(await wc.executeJavaScript("document.querySelector('[data-screen]')?.getAttribute('data-screen') || ''"));
-      if (screen) break;
+      if (screen && screen !== "loading") break;
       await new Promise((r) => setTimeout(r, 200));
     }
+    // Let the compositor paint the newly mounted screen before the capture.
+    await wc.executeJavaScript("document.fonts.ready.then(() => true)");
+    await new Promise((r) => setTimeout(r, 500));
+    const uiText = String(await wc.executeJavaScript("document.body.innerText"));
     const img = await wc.capturePage();
     fs.writeFileSync(out, img.toPNG());
     const status = await wc.executeJavaScript("fetch('/amb/api/status').then(r=>r.status)");
     const magpie = await wc.executeJavaScript("fetch('/magpie/').then(r=>r.status)");
-    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen, screen, status, magpie, magpieState: core?.magpie?.state })}`);
+    const title = await wc.executeJavaScript("document.title");
+    console.log(`SMOKE ${JSON.stringify({ hasUi: !!screen && screen !== "loading", screen, newApiForm: uiText.includes("OKINTO New API"), title, product: app.getName(), windowTitle: win!.getTitle(), profile: app.getPath("userData"), status, magpie, magpieState: core?.magpie?.state })}`);
   } finally {
     app.quit(); // 任何一步失败也退出，不让冒烟测试挂到超时
   }
@@ -306,6 +314,12 @@ process.on("uncaughtException", (e) => {
 });
 process.on("unhandledRejection", (e) => log.warn(`unhandled rejection: ${(e as Error)?.stack || String(e)}`));
 
+app.setName(PRODUCT);
+// Keep the existing profile when rebranding: it owns account cookies, preferences and the single-instance lock.
+// Smoke runs stay isolated from the user's profile and development window.
+const profileDir = SMOKE ? path.join(path.dirname(SMOKE), "electron-profile") : path.join(app.getPath("appData"), "anymodel bot");
+app.setPath("userData", profileDir);
+app.setPath("sessionData", profileDir);
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {

@@ -6,9 +6,9 @@ export default {
   line: {
     label: "Домен API",
     sub: "Выберите домен или сравните время ответа. Автоматического переключения нет.",
-    global: "modelflare.dev",
-    cn: "origin.modelflare.dev",
-    cf: "cf.modelflare.dev",
+    global: "api.okinto.com",
+    cn: "api.okinto.com",
+    cf: "api.okinto.com",
     test: "Проверить домены",
     testing: "Проверка…",
     testNote:
@@ -18,7 +18,7 @@ export default {
     unreachable: "Нет соединения",
   },
   login: {
-    label: "Войти или зарегистрироваться в Modelflare",
+    label: "Войти или зарегистрироваться в OKINTO New API",
     waiting: "Завершите вход в браузере — вы автоматически вернётесь сюда",
     reopen: "Открыть страницу входа снова ↗",
     copyLink: "Копировать ссылку",
@@ -26,7 +26,9 @@ export default {
     manualLabel: "Ссылка после входа",
     manualSubmit: "Завершить вход",
     manualSending: "Выполняется вход…",
-  },
+
+  "hint": "Войдите на странице OKINTO, чтобы автоматически загрузить модели и кошелёк."
+},
   model: {
     found: {
       one: "Подключено. Найдена {n} модель",
@@ -49,4 +51,26 @@ export default {
     start: "Начать общение",
     startAnyway: "Всё равно начать",
   },
+
+  "useKey": "Использовать API-ключ",
+  "keyOnly": "Сервис: https://api.okinto.com · Используйте API-ключ этого сайта",
+  "createKey": "Создать ключ в консоли OKINTO ↗",
+  "key": {
+  "label": "API-ключ",
+  "placeholder": "Вставьте ключ OKINTO New API",
+  "paste": "Вставить из буфера",
+  "show": "Показать",
+  "hide": "Скрыть",
+  "showKey": "Показать ключ",
+  "hideKey": "Скрыть ключ",
+  "retype": "Ввести заново",
+  "checkGroup": "Проверить группу в консоли ↗",
+  "useCn": "Подключиться снова",
+  "note": "Ключ хранится только на этом устройстве и не попадает в журналы или аргументы командной строки.",
+  "connecting": "Подключение…",
+  "submit": "Подключить OKINTO New API",
+  "slow": "Медленное сетевое соединение.",
+  "slowLine": "При медленном соединении проверьте дополнительные настройки.",
+  "advanced": "Дополнительно"
+}
 };
